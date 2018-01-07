@@ -1,0 +1,82 @@
+== Delayed Init
+
+因为我们开始讨论 Scala 中"奇怪"的类型，那么我们需要为延迟初始（Delayed Init）开一节。
+
+`DelayedInit` 实际上是一个"_编译器技巧_"，对于类型系统没有太大影响，但是一旦你理解了它，
+你就知道了 `scala.App` 是如何工作的，所以让我们深入到 `App` 的例子中：
+
+```scala
+object Main extends App {
+  println("Hello world!")
+}
+```
+
+通过阅读上面的代码，基于我们基本的 Scala 知识，我们可能会认为"_好了, 现在 `println` 实际上是 Main 的构造方法！_"。
+通常情况下这是没错的，但**这次不是**，这是因为  `App` 特质继承了 `DelayedInit` 特质
+
+```scala
+trait App extends DelayedInit {
+  // code here ...
+}
+```
+
+让我们看看特质 `DelayedInit` 的完整版源代码：
+
+```scala
+trait DelayedInit {
+  def delayedInit(x: => Unit): Unit
+}
+```
+
+正如你看到的，DelayedInit 不包含任何实现 - 与它相关的所有工作都由编译器完成，编译器会将所有继承 `DelayedInit` 的类和对象特殊处理（注意，特质_不会_像这样被重写）。这样特殊的处理方式如下：
+
+* 想象你的类/对象身体是一个函数，所有的事情都是在这些类/对象体内完成
+* 编译器会为你创建这个函数，然后传递给 `delayedInit(x: => Unit)` 方法（注意参数是 _call-by-name_）。
+
+让我们快速给一个例子，然后我们将手动实现 App 为我们做的工作（在 `delayedInit` 的帮助下）
+
+```scala
+// 我们写：
+object Main extends DelayedInit {
+  println("hello!")
+}
+
+// 编译器产生：
+object Main extends DelayedInit {
+  def delayedInit(x: => Unit = { println("Hello!") }) = // 需要我们自己填充实现
+}
+```
+
+使用这样的机制你可以在任意时候运行类的 body。现在我们知道了 `delayedInit` 是如何工作的，让我们实现我们自己的 `scala.App`（使用与 `scala.App` 同样的机制）
+
+```scala
+trait SimpleApp extends DelayedInit {
+
+  private val initCode = new ListBuffer[() => Unit]
+
+  override def delayedInit(body: => Unit) {
+    initCode += (() => body)
+  }
+
+  def main(args: Array[String]) = {
+    println("Whoa, I'm a SimpleApp!")
+
+    for (proc <- initCode) proc()
+
+    println("So long and thanks for all the fish!")
+  }
+}
+
+                                // 运行下面的类会打印出：
+object Test extends SimpleApp { //
+                                // Whoa, I'm a SimpleApp!
+  println("  Hello World!")     //   Hello World!
+                                // So long and thanks for all the fish!
+}
+```
+
+这就是 `DelayedInit` 的工作方式。因为特质_不会_被重写，我们继承 DealyedInit 的 `SimpleApp` 不会被修改，多亏了这点，我们可以利用 delayedInit 方法，积累我们遇见过的 "class bodies"
+（可以想象成我们正在处理一个深层次的类，然后 `delayedInit` 会被多次调用），最后像 Java 那样实现 `main` 方法依次调用 "class bodies"。
+
+
+

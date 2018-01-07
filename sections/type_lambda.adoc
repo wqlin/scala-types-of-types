@@ -1,0 +1,12 @@
+== Type Lambda +++<span style="color:red">&#x2717;</span>+++
+
+在 type lambda 中我们会用到 *Path Dependent* 和 *Structural Types*，所以如果你跳过了这些章节，你可能需要回去回顾下。
+
+了解 Type Lambdas 之前，让我们回头看看函数和柯里化。
+
+```scala
+class EitherMonad[A] extends Monad[({type Î»[Î±] = Either[A, Î±]})#Î»] {
+  def point[B](b: B): Either[A, B]
+  def bind[B, C](m: Either[A, B])(f: B => Either[A, C]): Either[A, C]
+}
+```

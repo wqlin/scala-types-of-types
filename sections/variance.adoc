@@ -1,0 +1,56 @@
+== Type Variance in Scala
+
+一般来说，variance 可被解释为类型之间的"类型兼容性"，形成一个 `extends` 关系。
+你需要处理这种问题的最常见情况是使用容器或者函数（你会惊讶的发现这种情况是非常频繁的！）。
+
+Scala 与 Java 的一个主要区别是，容器类型*默认并不是协变的（not-variant by default）*。
+这意味着如果你定义了一个容器 `Box[A]`，然后使用 `Fruit` 代替类型参数 A，那么你不能插入一个 `Apple` 到容器内（Apple 确实是水果，_IS-A_ 关系）。
+
+在 Scala 中，Variance 是通过在类型参数前加上 `+` 或者 `-` 符号定义的
+
+
+[options="header"]
+|===
+| 名字          | 描述                        | Scala 语法
+| Invariant     | C[T'] and C[T] **不**相关 | C[T]
+| Covariant     | C[T'] 是 C[T] 的子类        | C[+T]
+| Contravariant | C[T] 是 C[T'] 的子类        | C[-T]
+|===
+
+上面的表格以抽象的形式展现了我们需要关心的所有 variance。
+你可能想知道在哪里你需要关心这些呢。事实上，每次你使用集合时你都面临这样的问题："它是协变的吗？"。
+
+NOTE: 大多数__不可变（immutable）__ 都是__协变的（covariant）__，大多数__可变（mutable）__集合都是__不变的（invariant）__.
+
+在 Scala 中至少有两个关于 variance 很好并且非常直观的例子。第一个例子是"任何集合"，我们使用 List[+A] 作为集合的代表；
+第二个例子出现在函数的使用中，我们将不会在这里介绍。
+当讨论 Scala 的 `List` 时，我们通常指的是 `scala.collection.immutable.List[+A]`，既是不可变又是协变的。
+让我们看看 variance 与构建一个包含不同类型的列表有何关联。
+
+```scala
+class Fruit
+case class Apple() extends Fruit
+case class Orange() extends Fruit
+
+val l1: List[Apple] = Apple() :: Nil
+val l2: List[Fruit] = Orange() :: l1
+
+// 并且我们可以很安全的向前添加任何元素
+// 这是因为我们在构建一个新的 list - 而不是修改原来的实例
+
+val l3: List[AnyRef] = "" :: l2
+```
+
+值得一提的是，尽管**让不可变集合具有协变特性是__安全的__**，但是对于可变集合就不成立。
+一个经典的例子是不可变的 `Array[T]`。让我们来看看这里不变性对我们来说意味着什么，以及它是如何从错误中拯救我们的：
+
+```scala
+// 不能通过编译
+val a: Array[Any] = Array[Int](1, 2, 3)
+```
+
+因为数组的不可变性，上述赋值是不能通过编译的。
+假设这样的赋值是合法的，那么我们就可以这样写出这样的代码：`a(0) = "" // ArrayStoreException!`，会导致令人畏惧的 ArrayStoreException。
+
+TIP: 我说 Scala 中"大部分"不可变集合都是协变的。如果你好奇的话，一个反例是 `Set[A]`，虽然它是不可变集合，但是它是不变的。
+

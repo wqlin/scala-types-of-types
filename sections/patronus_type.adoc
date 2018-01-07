@@ -1,0 +1,11 @@
+== Patronus Type
+
+INFO: 由 Eugene 在这篇博文中发现
+
+Patronus Type 虽然不是特定的 "type of type"，但它是 Scala 特质线性化和抽象类型成员约束的一个非常有趣的应用。
+
+Eugene 展示的例子如下：
+
+```scala
+// TODO, missing code
+```

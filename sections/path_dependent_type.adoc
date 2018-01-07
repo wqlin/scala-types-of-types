@@ -1,0 +1,52 @@
+== Path Dependent Type
+
+Path dependent type 允许我们对一个类的内部类做类型检查。
+这一开始看起来很奇怪，但只要你看到这个类型的例子，你就会发现很直观：
+
+```scala
+class Outer {
+  class Inner
+}
+
+val out1 = new Outer
+val out1in = new out1.Inner // 具体实例, 从 Outer 的内部创建
+
+val out2 = new Outer
+val out2in = new out2.Inner // 另一个 Inner 实例, 外层实例是 out2
+
+// 定义 path dependent type。其中 "path" 就是"inside out1".
+type PathDep1 = out1.Inner
+
+
+// 类型检查
+
+val typeChecksOk: PathDep1 = out1in
+// OK
+
+val typeCheckFails: PathDep1 = out2in
+// <console>:27: error: type mismatch;
+// found   : out2.Inner
+// required: PathDep1
+//    (which expands to)  out1.Inner
+//       val typeCheckFails: PathDep1 = out2in
+```
+
+这里要理解的关键是"每个外部类都有自己的内部类"，所以每个内部类都是不同的类型 - 依赖于我们使用哪条路径到达内部类。
+
+这种类型是非常有用的，我们可以强制从一个具体参数中得到类型。一个使用这种类型的例子如下：
+
+```scala
+class Parent {
+  class Child
+}
+
+class ChildrenContainer(p: Parent) {
+  type ChildOfThisParent = p.Child
+
+  def add(c: ChildOfThisParent) = ???
+}
+```
+现在我们在类型系统使用 path dependent type 编码了这个逻辑，即这个容器只能包含 `p` 这个父类的孩子 - 而不是"任何父类"。
+
+很快我们会在 <<type-projection, Type Projections>> 一节看到如何表达 "child of any parent"。
+

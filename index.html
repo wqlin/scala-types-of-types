@@ -1,0 +1,2728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="generator" content="Asciidoctor 0.1.4">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scala&#8217;s Types of Types</title>
+<link rel="stylesheet" href="stylesheets/foundation.css">
+<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/3.2.1/css/font-awesome.min.css">
+<link rel="stylesheet" href="stylesheets/asciidoctor-pygments.css">
+</head>
+<body class="article toc2 toc-right">
+<div id="header">
+<h1>Scala&#8217;s Types of Types</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#the-different-types-of-types-in-scala">1. The different types of&#8230; Types in Scala</a></li>
+<li><a href="#work-in-progress">2. WORK IN PROGRESS</a></li>
+<li><a href="#type-ascription">3. Type Ascription</a></li>
+<li><a href="#unified-type-system-any-anyref-anyval">4. Unified Type System - Any, AnyRef, AnyVal</a></li>
+<li><a href="#the-bottom-types-nothing-and-null">5. The Bottom Types - Nothing and Null</a></li>
+<li><a href="#type-of-an-code-object-code">6. Type of an <code>object</code></a></li>
+<li><a href="#type-variance-in-scala">7. Type Variance in Scala</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#traits-as-in-interfaces-with-implementation">7.1. Traits, as in "interfaces with implementation"</a></li>
+<li><a href="#type-linearization-vs-the-diamond-problem">7.2. Type Linearization vs. The Diamond Problem</a></li>
+</ul>
+</li>
+<li><a href="#refined-types-refinements">8. Refined Types (refinements)</a></li>
+<li><a href="#package-object">9. Package Object</a></li>
+<li><a href="#type-alias">10. Type Alias</a></li>
+<li><a href="#abstract-type-member">11. Abstract Type Member</a></li>
+<li><a href="#self-recursive-type">12. Self-Recursive Type</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#f-bounded-type">12.1. F-Bounded Type</a></li>
+</ul>
+</li>
+<li><a href="#type-constructor-span-style-color-red-span">13. Type Constructor <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#higher-order-kind-span-style-color-red-span">14. Higher-Order Kind <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#case-class">15. Case Class</a></li>
+<li><a href="#enumeration">16. Enumeration</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#enumeration-2">16.1. Enumeration</a></li>
+<li><a href="#enum">16.2. @enum</a></li>
+</ul>
+</li>
+<li><a href="#value-class">17. Value Class</a></li>
+<li><a href="#type-class-span-style-color-red-span">18. Type Class <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#universal-trait-span-style-color-red-span">19. Universal Trait <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#self-type-annotation">20. Self Type Annotation</a></li>
+<li><a href="#phantom-type">21. Phantom Type</a></li>
+<li><a href="#structural-type">22. Structural Type</a></li>
+<li><a href="#path-dependent-type">23. Path Dependent Type</a></li>
+<li><a href="#type-projection">24. Type Projection</a></li>
+<li><a href="#existential-types">25. Existential Types</a></li>
+<li><a href="#specialized-types">26. Specialized Types</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#specialized">26.1. @specialized</a></li>
+<li><a href="#miniboxing-span-style-color-red-span">26.2. Miniboxing <span style="color:red">&#x2717;</span></a></li>
+</ul>
+</li>
+<li><a href="#type-lambda-span-style-color-red-span">27. Type Lambda <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#union-type-span-style-color-red-span">28. Union Type <span style="color:red">&#x2717;</span></a></li>
+<li><a href="#delayed-init">29. Delayed Init</a></li>
+<li><a href="#dynamic-type">30. Dynamic Type</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#applydynamic">30.1. applyDynamic</a></li>
+<li><a href="#applydynamicnamed">30.2. applyDynamicNamed</a></li>
+<li><a href="#selectdynamic">30.3. selectDynamic</a></li>
+<li><a href="#updatedynamic">30.4. updateDynamic</a></li>
+</ul>
+</li>
+<li><a href="#bibliography-and-kudos">31. Bibliography and Kudos</a></li>
+<li>
+<ul class="sectlevel2">
+<li><a href="#reference-and-further-reading">31.1. Reference and further reading</a></li>
+<li><a href="#thanks-and-kudos">31.2. Thanks and kudos</a></li>
+<li><a href="#give-back-some-kudos">31.3. Give back some kudos!</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="the-different-types-of-types-in-scala"><a class="anchor" href="#the-different-types-of-types-in-scala"></a>1. The different types of&#8230; Types in Scala</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>这篇博客是我在 2013 年参加了数个 JavaOne 会议，多次与人们讨论 Scala 中的类型之后写下的。经过这些讨论，我发现不同的人学习 Scala 时都会重复询问许多类似的问题。
+我认为这是因为我们没有一个完整记录 Scala 类型技巧的列表，所以我决定写这样的一个列表 - 用现实生活的例子解释为什么我们需要这些类型。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="work-in-progress"><a class="anchor" href="#work-in-progress"></a>2. WORK IN PROGRESS</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>虽然我在这篇博文已经花了不少时间，但是其中还有很多未完成。
+比如 Higher Kinds 部分需要重写，Self Type 部分添加更多的细节等等。请查看 <a href="https://github.com/ktoso/scala-types-of-types/blob/gh-pages/TODO">TODO</a>。</p>
+</div>
+<div class="paragraph">
+<p>如果你想帮忙的话，请不要犹豫！我欢迎任何形式的 pull request 或者建议（呃，我更喜欢 pull request;-)</p>
+</div>
+<div class="paragraph">
+<p>另外，如果你看到某个小节标记着 "<span style="color:red">&#x2717;</span>" ，这意味着这部分需要重写或者还没有完成。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-ascription"><a class="anchor" href="#type-ascription"></a>3. Type Ascription</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scala 有类型推断，这意味我们不需要每次都在源代码中声明变量的类型，可以直接使用 <code>val</code> 或者 <code>def</code> 。
+这种显式声明变量类型的方式称为 Type Ascription（有时也称为 "Type Annotation"，
+但是这样的名字很容易引起误解，所以没有在 Scala 规范中使用）。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">Thing</span>
+<span class="tok-k">def</span> <span class="tok-n">getThing</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Thing</span> <span class="tok-o">{</span> <span class="tok-o">}</span>
+
+<span class="tok-c1">// 没有 Type Ascription，变量类型被推导为 `Thing`</span>
+<span class="tok-k">val</span> <span class="tok-n">inferred</span> <span class="tok-k">=</span> <span class="tok-n">getThing</span>
+
+<span class="tok-c1">// 有 Type Ascription</span>
+<span class="tok-k">val</span> <span class="tok-n">thing</span><span class="tok-k">:</span> <span class="tok-kt">Thing</span> <span class="tok-o">=</span> <span class="tok-n">getThing</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在上述情况下，我们可以省略 Type Ascription。不过你可能会决定总是描述公有方法（public methods）的返回类型（<strong>这是一个好主意！</strong>），使得代码更加自我文档化。</p>
+</div>
+<div class="paragraph">
+<p>当你犹豫的时候，可以参考下面的提示问题来决定是否使用 Type Ascription：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>是一个参数吗？如果是的话，那么你必须加上。</p>
+</li>
+<li>
+<p>是公有方法的返回值吗？如果是的话，那么需要加上以便于代码自我文档化和控制返回类型。</p>
+</li>
+<li>
+<p>是递归或者重载方法的返回值吗？如果是的话，那么你必须加上。</p>
+</li>
+<li>
+<p>你是否需要返回一个比推导器推导的更通用的类型？如果是的话，那么需要 Type Ascription，不然你就会向客户端暴露代码实现细节</p>
+</li>
+<li>
+<p>否则的话&#8230;不要加上 Type Ascription</p>
+</li>
+<li>
+<p>相关提示：加上 Type Ascription 可以加快编译速度，并且能看到方法的返回类型也是很好的</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>所以我们在变量名字后加上 Type Ascription。说了这么多，让我们进入下一个话题，其中这些类型会变得越来越有趣。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="unified-type-system-any-anyref-anyval"><a class="anchor" href="#unified-type-system-any-anyref-anyval"></a>4. Unified Type System - Any, AnyRef, AnyVal</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>我们之所以称 Scala 的类型系统是"统一"的，是因为它有一个最顶层类型 Any。
+<strong>这不同于 Java</strong>，Java 存在原始类型的"特殊情况"（<code>int</code>, <code>long</code>, <code>float</code>, <code>double</code>, <code>byte</code>, <code>char</code>, <code>short</code>, <code>boolean</code>），这些类型不继承 Java 的"近似顶层类型" - <code>java.lang.Object</code>。</p>
+</div>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<img src="assets/img/scala-types.png" alt="Scala's Unified Type System">
+</div>
+</div>
+<div class="paragraph">
+<p>Scala 通过引入 <code>Any</code> 使得所有类型都有一个通用顶层类型。<code>Any</code> 是 <code>AnyRef</code> 和 <code>AnyVal</code> 的父类。</p>
+</div>
+<div class="paragraph">
+<p><code>AnyRef</code> 是 Java（以及 JVM）的"对象世界（object world）"，对应 <code>java.lang.Object</code>，是所有对象的父类。
+另一方面，<code>AnyVal</code> 对应 Java 的"值世界（value world）"，比如 <code>int</code> 和其它 JVM 原始类型。</p>
+</div>
+<div class="paragraph">
+<p>得益于这样的层次结构，我们可以定义接受 <code>Any</code> 的方法 - 兼容 <code>scala.Int</code> 和 <code>java.lang.String</code>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Person</span>
+
+<span class="tok-k">val</span> <span class="tok-n">allThings</span> <span class="tok-k">=</span> <span class="tok-nc">ArrayBuffer</span><span class="tok-o">[</span><span class="tok-kt">Any</span><span class="tok-o">]()</span>
+
+<span class="tok-k">val</span> <span class="tok-n">myInt</span> <span class="tok-k">=</span> <span class="tok-mi">42</span>             <span class="tok-c1">// Int, 运行时保持 JVM 原始类型 `int`</span>
+
+<span class="tok-n">allThings</span> <span class="tok-o">+=</span> <span class="tok-n">myInt</span>         <span class="tok-c1">// Int（继承 AnyVal）</span>
+                           <span class="tok-c1">// 需要装箱（！） -&gt; 在集合中变成 java.lang.Integer（！）</span>
+
+<span class="tok-n">allThings</span> <span class="tok-o">+=</span> <span class="tok-k">new</span> <span class="tok-nc">Person</span><span class="tok-o">()</span>  <span class="tok-c1">// Person（继承 AnyRef），没有特别的地方</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>类型系统能透明地处理值和对象的集成或者共同存在，但一旦我们在 JVM 级别进入 <code>ArrayBuffer[Any]</code>，我们的 Int 实例会被打包成对象。
+让我们使用 Scala REPL 和它的 <code>:javap</code> 命令（该命令可以展示编译器生成的字节码）来研究上面的例子：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="asciidoc language-asciidoc">35: invokevirtual #47  // Method myInt:()I
+38: invokestatic  #53  // Method scala/runtime/BoxesRunTime.boxToInteger:(I)Ljava/lang/Integer;
+41: invokevirtual #57  // Method scala/collection/mutable/ArrayBuffer.$plus$eq:(Ljava/lang/Object;)Lscala/collection/mutable/ArrayBuffer;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>你能注意到 <code>myInt</code> 仍是一个 <code>int primitive</code> 类型的值（从 <code>myInt:() I</code> <strong>invokevirtual</strong> 调用后的 I 可以看出）。
+然后，在将其加入 ArrayBuffer 之前，scalac 插入了一个 <code>BoxesRunTime.boxToInteger:(I)Ljava/lang/Integer</code> 的调用（给没有经常阅读字节码读者的一个小提示，scalac 实际调用的是 <code>public Integer boxToInteger(i: int)</code>）。
+通过一个聪明的编译器，将所有变量都作为这个公共类型结构中的一个对象，这么做，至少在 Scala 源代码层面，我们可以远离"但是原始类型是不同的"窘况 - 编译器会帮我们处理这种情况。
+在 JVM 层面，当然区别还是存在的，scalac 会尽可能的使用原始类型，因为原始类型的操作更快，并且占用更少的内存（对象显然大于原始类型）。</p>
+</div>
+<div class="paragraph">
+<p>另一方面，我们可以限制一个方法只能接受"轻量级"值类型：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">def</span> <span class="tok-n">check</span><span class="tok-o">(</span><span class="tok-n">in</span><span class="tok-k">:</span> <span class="tok-kt">AnyVal</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">()</span>
+
+<span class="tok-n">check</span><span class="tok-o">(</span><span class="tok-mi">42</span><span class="tok-o">)</span>    <span class="tok-c1">// Int -&gt; AnyVal</span>
+<span class="tok-n">check</span><span class="tok-o">(</span><span class="tok-mf">13.37</span><span class="tok-o">)</span> <span class="tok-c1">// Double -&gt; AnyVal</span>
+
+<span class="tok-n">check</span><span class="tok-o">(</span><span class="tok-k">new</span> <span class="tok-nc">Object</span><span class="tok-o">)</span> <span class="tok-c1">// -&gt; AnyRef = 编译失败</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在上面的例子中，我们使用了一个 TypeClass <code>Checker[T]</code> 和一个类型绑定，这将在下面讨论。
+总体思路是，这个方法只接受 <a href="#value-class">Value Classes</a>，可以是 Int 或者自定义的 Value 类型。
+虽然这样的用法不常见，但是它很好地展示了类型系统是如何拥抱 Java 原始类型，并将它们引入到"真实"的类型系统，
+而不是像 Java 那样区分出引用类型和值类型。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="the-bottom-types-nothing-and-null"><a class="anchor" href="#the-bottom-types-nothing-and-null"></a>5. The Bottom Types - Nothing and Null</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scala 中，每个变量都有"某种"类型&#8230;但是你是否想过在某些"奇怪"的情况下，类型推导器（type inferencer）是如何能继续工作的，
+比如抛出了异常。让我们来看看下面这个 "if/else throw" 例子：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">val</span> <span class="tok-n">thing</span><span class="tok-k">:</span> <span class="tok-kt">Int</span> <span class="tok-o">=</span>
+  <span class="tok-k">if</span> <span class="tok-o">(</span><span class="tok-n">test</span><span class="tok-o">)</span>
+    <span class="tok-mi">42</span>                             <span class="tok-c1">// : Int</span>
+  <span class="tok-k">else</span>
+    <span class="tok-k">throw</span> <span class="tok-k">new</span> <span class="tok-nc">Exception</span><span class="tok-o">(</span><span class="tok-s">&quot;Whoops!&quot;</span><span class="tok-o">)</span> <span class="tok-c1">// : Nothing</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如你在注释中看到，if 语句块的类型是 Int（容易推导），else 语句块的类型是 Nothing（有趣）。
+推导器推导出 thing 的类型只能是 Int，这是因为 Nothing 的 <strong>Bottom Type</strong> 属性。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-note" title="Note"></i>
+</td>
+<td class="content">
+一个关于 bottom types 如何工作的直观理解是：<em>"<code>Nothing</code> extends everything."</em>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>类型推导器总会寻找 if/else 语句两个分支的"公共类型"，所以如果一个分支有一个继承了所有类型的类型，
+那么另一个分支的类型就会自动成为 if/else 表达式的类型。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-n">类型可视化</span><span class="tok-err">：</span>
+
+           <span class="tok-o">[</span><span class="tok-kt">Int</span><span class="tok-o">]</span> <span class="tok-o">-&gt;</span> <span class="tok-o">...</span> <span class="tok-o">-&gt;</span> <span class="tok-nc">AnyVal</span> <span class="tok-o">-&gt;</span> <span class="tok-nc">Any</span>
+<span class="tok-nc">Nothing</span> <span class="tok-o">-&gt;</span> <span class="tok-o">[</span><span class="tok-kt">Int</span><span class="tok-o">]</span> <span class="tok-o">-&gt;</span> <span class="tok-o">...</span> <span class="tok-o">-&gt;</span> <span class="tok-nc">AnyVal</span> <span class="tok-o">-&gt;</span> <span class="tok-nc">Any</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这样的推导方式也适用于 Scala 的第二个 Bottom Type - <code>Null</code>。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">val</span> <span class="tok-n">thing</span><span class="tok-k">:</span> <span class="tok-kt">String</span> <span class="tok-o">=</span>
+  <span class="tok-k">if</span> <span class="tok-o">(</span><span class="tok-n">test</span><span class="tok-o">)</span>
+    <span class="tok-s">&quot;Yay!&quot;</span>  <span class="tok-c1">// : String</span>
+  <span class="tok-k">else</span>
+  	<span class="tok-kc">null</span>    <span class="tok-c1">// : Null</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如预料中那样 <code>thing</code> 的类型是， String。<code>Null</code> 遵循与 Nothing 几乎一样的规则。
+我会用这个例子来谈谈类型推导，以及 AnyVals 和 AnyRefs 之间的区别。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="asciidoc language-asciidoc">类型可视化：
+
+        [String] -> AnyRef -> Any
+Null -> [String] -> AnyRef -> Any
+
+推导类型：String</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>让我们思考下 <code>Int</code> 和其他不能包含 null 的原始类型。为了研究这种情况，让我们进入 REPL 并使用 <code>:type</code> 命令（这条命令可以得到表达式的类型）：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala-repl language-scala-repl">scala> :type if (false) 23 else null
+Any</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这与上面例子中一个分支返回 String 对象的情况不同。
+让我们来看看这里的详细类型，相比 <code>Nothing</code> 继承 everything，<code>Null</code> 继承的类型会少一点。
+让我们再次使用 :type 看看 Int 的继承关系：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala-repl language-scala-repl">scala> :type -v 12
+// 类型签名
+Int
+
+// 内部类型结构
+TypeRef(TypeSymbol(final abstract class Int extends AnyVal))</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在这里，可见选项（-v）输出了更多的信息，现在我们知道 <code>Int</code> 是一个 <code>AnyVal</code> - 是一个代表值类的特殊类 - 不能接受 <code>Null</code>。
+如果我们查看 <a href="https://github.com/scala/scala/blob/v2.10.3/src/library/scala/AnyVal.scala">AnyVal 实现</a>，我们会发现:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">abstract</span> <span class="tok-k">class</span> <span class="tok-nc">AnyVal</span> <span class="tok-k">extends</span> <span class="tok-nc">Any</span> <span class="tok-k">with</span> <span class="tok-nc">NotNull</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>（注意，上面的代码是 Scala 2.10.x 及之前的 <code>AnyVal</code> 实现；从 2.11.x 之后，NotNull 就被移除了）</p>
+</div>
+<div class="paragraph">
+<p>我之所以在这里提到这个，是因为 AnyVal 的核心功能被很好的用类型表达出来。<strong>注意 NotNull 特质</strong>！</p>
+</div>
+<div class="paragraph">
+<p>回到刚才的主题，为什么我们的 if 语句，其中一个分支的类型是 <code>AnyVal</code> 然后另一个分支的类型是 <code>Null</code> 的公共类型是 Any 而不是其他类型。
+一句简洁的解释就是： <code>Null 继承所有 AnyRefs</code> 而 <code>Nothing 继承 anything</code>。
+因为 AnyVals（比如 numbers）与 AnyRefs 不在同一颗继承树上，那么一个 number 和一个 <code>null</code> 值的公共类型只能是 Any - 这就是上述情况的解释。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-n">类型可视化</span><span class="tok-err">：</span>
+
+<span class="tok-nc">Int</span>  <span class="tok-o">-&gt;</span> <span class="tok-nc">NotNull</span> <span class="tok-o">-&gt;</span> <span class="tok-nc">AnyVal</span> <span class="tok-o">-&gt;</span> <span class="tok-o">[</span><span class="tok-kt">Any</span><span class="tok-o">]</span>
+<span class="tok-nc">Null</span>            <span class="tok-o">-&gt;</span> <span class="tok-nc">AnyRef</span> <span class="tok-o">-&gt;</span> <span class="tok-o">[</span><span class="tok-kt">Any</span><span class="tok-o">]</span>
+
+<span class="tok-n">推导类型</span><span class="tok-err">：</span><span class="tok-nc">Any</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-of-an-code-object-code"><a class="anchor" href="#type-of-an-code-object-code"></a>6. Type of an <code>object</code></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scala 的 <code>object</code> 是基于类实现的（这是很显然的 - 因为类是 JVM 的基本构建模块），
+但是你会注意到我们无法像获得类的类型那样获得一个 object 的类型。</p>
+</div>
+<div class="paragraph">
+<p>令人惊讶的是，我经常被问到如何传递一个 object 给一个方法的问题。
+如果仅使用 <code>obj: ExampleObj</code> 是不能通过编译的，这是因为 ExampleObject 已经指向 object 实例了，在这种情况下应该使用一个叫做 <code>type</code> 的方法。
+下面的例子展示了如何使用 <code>type</code> 方法：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">ExampleObj</span>
+
+<span class="tok-k">def</span> <span class="tok-n">takeAnObject</span><span class="tok-o">(</span><span class="tok-n">obj</span><span class="tok-k">:</span> <span class="tok-kt">ExampleObj.</span><span class="tok-k">type</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">{}</span>
+
+<span class="tok-n">takeAnObject</span><span class="tok-o">(</span><span class="tok-nc">ExampleObj</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-variance-in-scala"><a class="anchor" href="#type-variance-in-scala"></a>7. Type Variance in Scala</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>一般来说，variance 可被解释为类型之间的"类型兼容性"，形成一个 <code>extends</code> 关系。
+你需要处理这种问题的最常见情况是使用容器或者函数（你会惊讶的发现这种情况是非常频繁的！）。</p>
+</div>
+<div class="paragraph">
+<p>Scala 与 Java 的一个主要区别是，容器类型<strong>默认并不是协变的（not-variant by default）</strong>。
+这意味着如果你定义了一个容器 <code>Box[A]</code>，然后使用 <code>Fruit</code> 代替类型参数 A，那么你不能插入一个 <code>Apple</code> 到容器内（Apple 确实是水果，<em>IS-A</em> 关系）。</p>
+</div>
+<div class="paragraph">
+<p>在 Scala 中，Variance 是通过在类型参数前加上 <code>+</code> 或者 <code>-</code> 符号定义的</p>
+</div>
+<table class="tableblock frame-all grid-all" style="width:100%; ">
+<colgroup>
+<col style="width:33%;">
+<col style="width:33%;">
+<col style="width:33%;"> 
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">名字</th>
+<th class="tableblock halign-left valign-top">描述</th>
+<th class="tableblock halign-left valign-top">Scala 语法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Invariant</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[T'] and C[T] <strong>不</strong>相关</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[T]</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Covariant</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[T'] 是 C[T] 的子类</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[+T]</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Contravariant</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[T] 是 C[T'] 的子类</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">C[-T]</p></td>
+</tr>
+</tbody>
+</table>
+
+<div class="paragraph">
+<p>上面的表格以抽象的形式展现了我们需要关心的所有 variance。
+你可能想知道在哪里你需要关心这些呢。事实上，每次你使用集合时你都面临这样的问题："它是协变的吗？"。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-note" title="Note"></i>
+</td>
+<td class="content">
+大多数<em>不可变（immutable）</em> 都是<em>协变的（covariant）</em>，大多数<em>可变（mutable）</em>集合都是<em>不变的（invariant）</em>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>在 Scala 中至少有两个关于 variance 很好并且非常直观的例子。第一个例子是"任何集合"，我们使用 List[+A] 作为集合的代表；
+第二个例子出现在函数的使用中，我们将不会在这里介绍。
+当讨论 Scala 的 <code>List</code> 时，我们通常指的是 <code>scala.collection.immutable.List[+A]</code>，既是不可变又是协变的。
+让我们看看 variance 与构建一个包含不同类型的列表有何关联。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Fruit</span>
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Apple</span><span class="tok-o">()</span> <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span>
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Orange</span><span class="tok-o">()</span> <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span>
+
+<span class="tok-k">val</span> <span class="tok-n">l1</span><span class="tok-k">:</span> <span class="tok-kt">List</span><span class="tok-o">[</span><span class="tok-kt">Apple</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Apple</span><span class="tok-o">()</span> <span class="tok-o">::</span> <span class="tok-nc">Nil</span>
+<span class="tok-k">val</span> <span class="tok-n">l2</span><span class="tok-k">:</span> <span class="tok-kt">List</span><span class="tok-o">[</span><span class="tok-kt">Fruit</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Orange</span><span class="tok-o">()</span> <span class="tok-o">::</span> <span class="tok-n">l1</span>
+
+<span class="tok-c1">// 并且我们可以很安全的向前添加任何元素</span>
+<span class="tok-c1">// 这是因为我们在构建一个新的 list - 而不是修改原来的实例</span>
+
+<span class="tok-k">val</span> <span class="tok-n">l3</span><span class="tok-k">:</span> <span class="tok-kt">List</span><span class="tok-o">[</span><span class="tok-kt">AnyRef</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-s">&quot;&quot;</span> <span class="tok-o">::</span> <span class="tok-n">l2</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>值得一提的是，尽管<strong>让不可变集合具有协变特性是<em>安全的</em></strong>，但是对于可变集合就不成立。
+一个经典的例子是不可变的 <code>Array[T]</code>。让我们来看看这里不变性对我们来说意味着什么，以及它是如何从错误中拯救我们的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 不能通过编译</span>
+<span class="tok-k">val</span> <span class="tok-n">a</span><span class="tok-k">:</span> <span class="tok-kt">Array</span><span class="tok-o">[</span><span class="tok-kt">Any</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Array</span><span class="tok-o">[</span><span class="tok-kt">Int</span><span class="tok-o">](</span><span class="tok-mi">1</span><span class="tok-o">,</span> <span class="tok-mi">2</span><span class="tok-o">,</span> <span class="tok-mi">3</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>因为数组的不可变性，上述赋值是不能通过编译的。
+假设这样的赋值是合法的，那么我们就可以这样写出这样的代码：<code>a(0) = "" // ArrayStoreException!</code>，会导致令人畏惧的 ArrayStoreException。</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+我说 Scala 中"大部分"不可变集合都是协变的。如果你好奇的话，一个反例是 <code>Set[A]</code>，虽然它是不可变集合，但是它是不变的。
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="traits-as-in-interfaces-with-implementation"><a class="anchor" href="#traits-as-in-interfaces-with-implementation"></a>7.1. Traits, as in "interfaces with implementation"</h3>
+<div class="paragraph">
+<p>首先，让我们看看我们用特质（Trait）能做到的最简单的事情：
+我们是如何处理一个混入了多个特质的类型，就好像它实现了这些"带有实现的接口" - 如果你来自 Java 世界，你有可能会试图这样称呼特质。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Base</span> <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">b</span> <span class="tok-k">=</span> <span class="tok-s">&quot;&quot;</span> <span class="tok-o">}</span>
+<span class="tok-k">trait</span> <span class="tok-nc">Cool</span> <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">c</span> <span class="tok-k">=</span> <span class="tok-s">&quot;&quot;</span> <span class="tok-o">}</span>
+<span class="tok-k">trait</span> <span class="tok-nc">Awesome</span> <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">a</span> <span class="tok-o">=</span><span class="tok-s">&quot;&quot;</span> <span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">BA</span> <span class="tok-k">extends</span> <span class="tok-nc">Base</span> <span class="tok-k">with</span> <span class="tok-nc">Awesome</span>
+<span class="tok-k">class</span> <span class="tok-nc">BC</span> <span class="tok-k">extends</span> <span class="tok-nc">Base</span> <span class="tok-k">with</span> <span class="tok-nc">Cool</span>
+
+<span class="tok-c1">// 正如你所预料的，你可以将这些实例转换成它们混入的任意特质类型</span>
+
+<span class="tok-k">val</span> <span class="tok-n">ba</span><span class="tok-k">:</span> <span class="tok-kt">BA</span> <span class="tok-o">=</span> <span class="tok-k">new</span> <span class="tok-nc">BA</span>
+<span class="tok-k">val</span> <span class="tok-n">bc</span><span class="tok-k">:</span> <span class="tok-kt">Base</span> <span class="tok-kt">with</span> <span class="tok-kt">Cool</span> <span class="tok-o">=</span> <span class="tok-k">new</span> <span class="tok-nc">BC</span>
+
+<span class="tok-k">val</span> <span class="tok-n">b1</span><span class="tok-k">:</span> <span class="tok-kt">Base</span> <span class="tok-o">=</span> <span class="tok-n">ba</span>
+<span class="tok-k">val</span> <span class="tok-n">b2</span><span class="tok-k">:</span> <span class="tok-kt">Base</span> <span class="tok-o">=</span> <span class="tok-n">bc</span>
+
+<span class="tok-n">ba</span><span class="tok-o">.</span><span class="tok-n">a</span>
+<span class="tok-n">bc</span><span class="tok-o">.</span><span class="tok-n">c</span>
+<span class="tok-n">b1</span><span class="tok-o">.</span><span class="tok-n">b</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>到目前为止，这对你来说应该是相当直接的。现在让我们深入"菱形问题"的世界，C++ 开发人员应该熟悉这一点。
+基本上，"菱形问题"就是存在多重继承的情况下，我们无法确定哪个是直接父类。
+如果我们将特质组合看成是多重继承的用法，那么下面的图片就演示了这个问题：</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="type-linearization-vs-the-diamond-problem"><a class="anchor" href="#type-linearization-vs-the-diamond-problem"></a>7.2. Type Linearization vs. The Diamond Problem</h3>
+<div class="imageblock" style="text-align: center">
+<div class="content">
+<img src="assets/img/220px-Diamond_inheritance.svg.png" alt="Diamond Inheritance">
+</div>
+</div>
+<div class="paragraph">
+<p>为了产生"菱形问题"，我们只要在 <code>B</code> 或者/并且 <code>C</code> 中有一个覆盖实现。
+这样的话，当调用 D 的方法时，我们就引入了歧义性。在 D 中，我们调用的是继承来自 C 还是来自 B 的方法？
+在 Scala 中，只有一个覆盖方法时是非常简单的 - 覆盖方法胜利。但是，让我们考虑更复杂的案例：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>类 <code>A</code> 定义了一个方法 <code>common</code> 返回 <code>a</code>,</p>
+</li>
+<li>
+<p>特质 <code>B</code> 覆盖了 <code>common</code> 返回 <code>b</code>,</p>
+</li>
+<li>
+<p>特质 <code>C</code> 覆盖了 <code>common</code> 返回 <code>c</code>,</p>
+</li>
+<li>
+<p>类 <code>D</code> 继承了 <code>B</code> and <code>C</code>,</p>
+</li>
+<li>
+<p>类 <code>D</code> 继承了哪个版本的 <code>common</code> 方法呢？是来自 <code>C</code> 的覆盖实现，还是来自 <code>B</code> 的呢？</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>这种模糊性是每个类似多继承机制的痛点。Scala 通过所谓的 <strong>Type Linearization</strong> 解决这个问题。
+换句话说，给定一个菱形的类结构，我们<strong>总是</strong>（<strong>确定性地</strong>）可以决定在 D 的内部调用 <code>common</code> 时哪个覆盖方法会被调用。
+让我们用代码实现，然后再讨论线性化：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">A</span> <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">common</span> <span class="tok-k">=</span> <span class="tok-s">&quot;A&quot;</span> <span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">B</span> <span class="tok-k">extends</span> <span class="tok-n">A</span> <span class="tok-o">{</span> <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">common</span> <span class="tok-k">=</span> <span class="tok-s">&quot;B&quot;</span> <span class="tok-o">}</span>
+<span class="tok-k">trait</span> <span class="tok-nc">C</span> <span class="tok-k">extends</span> <span class="tok-n">A</span> <span class="tok-o">{</span> <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">common</span> <span class="tok-k">=</span> <span class="tok-s">&quot;C&quot;</span> <span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">D1</span> <span class="tok-k">extends</span> <span class="tok-n">B</span> <span class="tok-k">with</span> <span class="tok-n">C</span>
+<span class="tok-k">class</span> <span class="tok-nc">D2</span> <span class="tok-k">extends</span> <span class="tok-n">C</span> <span class="tok-k">with</span> <span class="tok-n">B</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>检查上述类型，我们获得下面的运行时行为：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-o">(</span><span class="tok-k">new</span> <span class="tok-n">D1</span><span class="tok-o">).</span><span class="tok-n">common</span> <span class="tok-o">==</span> <span class="tok-s">&quot;C&quot;</span>
+
+<span class="tok-o">(</span><span class="tok-k">new</span> <span class="tok-n">D2</span><span class="tok-o">).</span><span class="tok-n">common</span> <span class="tok-o">==</span> <span class="tok-s">&quot;B&quot;</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>之所以会出现这样的结果，是因为在这里 Scala 为我们应用了 type linearization。算法流程如下：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>从头构建一个类型的列表，列表的第一个元素是我们正在线性化的类型</p>
+</li>
+<li>
+<p>递归地扩展每个父类，并把这些类型都放到这个列表中（列表应该是平坦而不是嵌套的）</p>
+</li>
+<li>
+<p>从结果列表中删除重复项，从列表左边开始扫描，去除已经"看到过"的类型</p>
+</li>
+<li>
+<p>完成</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>让我们对上面的菱形例子应用这个算法，验证为什么 <code>D1 extends B with C</code>（和 <code>D2 extends C with B</code>）会返回这样的结果：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 从 D1 开始</span>
+<span class="tok-n">B</span> <span class="tok-k">with</span> <span class="tok-n">C</span> <span class="tok-k">with</span> <span class="tok-o">&lt;</span><span class="tok-n">D1</span><span class="tok-o">&gt;</span>
+
+<span class="tok-c1">// 对每一个类型，扩展它直到到达 Any</span>
+<span class="tok-o">(</span><span class="tok-nc">Any</span> <span class="tok-k">with</span> <span class="tok-nc">AnyRef</span> <span class="tok-k">with</span> <span class="tok-n">A</span> <span class="tok-k">with</span> <span class="tok-n">B</span><span class="tok-o">)</span> <span class="tok-k">with</span> <span class="tok-o">(</span><span class="tok-nc">Any</span> <span class="tok-k">with</span> <span class="tok-nc">AnyRef</span> <span class="tok-k">with</span> <span class="tok-n">A</span> <span class="tok-k">with</span> <span class="tok-n">C</span><span class="tok-o">)</span> <span class="tok-k">with</span> <span class="tok-o">&lt;</span><span class="tok-n">D1</span><span class="tok-o">&gt;</span>
+
+<span class="tok-c1">// 从左到右，通过删除&quot;已经看到&quot;的类型，去除冗余</span>
+<span class="tok-o">(</span><span class="tok-nc">Any</span> <span class="tok-k">with</span> <span class="tok-nc">AnyRef</span> <span class="tok-k">with</span> <span class="tok-n">A</span> <span class="tok-k">with</span> <span class="tok-n">B</span><span class="tok-o">)</span> <span class="tok-k">with</span> <span class="tok-o">(</span>                            <span class="tok-n">C</span><span class="tok-o">)</span> <span class="tok-k">with</span> <span class="tok-o">&lt;</span><span class="tok-n">D1</span><span class="tok-o">&gt;</span>
+
+<span class="tok-c1">// 书写最后的结果类型</span>
+<span class="tok-nc">Any</span> <span class="tok-k">with</span> <span class="tok-nc">AnyRef</span> <span class="tok-k">with</span> <span class="tok-n">A</span> <span class="tok-k">with</span> <span class="tok-n">B</span> <span class="tok-k">with</span> <span class="tok-n">C</span> <span class="tok-k">with</span> <span class="tok-o">&lt;</span><span class="tok-n">D1</span><span class="tok-o">&gt;</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在调用 <code>common</code> 方法时，我们可以很简单的决定调用的是哪个版本：
+我们只需要查看线性化类型，并尝试从右向左解析方法调用。
+在 <code>D1</code> 的例子中，处于"最右边"并且能提供的 <code>common</code> 实现的是特质 C，
+所以它覆盖了 <code>B</code> 提供的 <code>common</code> 实现。那么在 <code>D1</code> 内部调用 <code>common</code> 的结果就是 <code>"c"</code>。</p>
+</div>
+<div class="paragraph">
+<p>你可以通过对类 <code>D2</code> 运行这个算法来加深理解 - <code>B</code> 应该线性化在 <code>C</code> 的右边，所以当你运行代码时会返回一个 <code>"b"</code>。
+对于这样简单的线性化例子，我们可以仅考虑"最右边的赢"，这样的想法非常简单易于理解，但是没有给出线性化算法的全貌。</p>
+</div>
+<div class="paragraph">
+<p>值得一提的是，使用这个技巧，我们现在还可以回答<strong>"谁是我的 <code>super</code>？</strong>。对于任意的类，如果你想检查谁是你的父类，只需要检查线性化类型的左边。比如在我们的例子（<code>D1</code>）中，<code>C</code> 的父类是 <code>B</code>。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="refined-types-refinements"><a class="anchor" href="#refined-types-refinements"></a>8. Refined Types (refinements)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Refinements 可以很容易的解释为"继承而无需命名子类"（"subclassing without naming the subclass"）。所以在代码中，refinements 看起来像：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Entity</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">Persister</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">doPersist</span><span class="tok-o">(</span><span class="tok-n">e</span><span class="tok-k">:</span> <span class="tok-kt">Entity</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">{</span>
+    <span class="tok-n">e</span><span class="tok-o">.</span><span class="tok-n">persistForReal</span><span class="tok-o">()</span>
+  <span class="tok-o">}</span>
+<span class="tok-o">}</span>
+
+<span class="tok-c1">// 我们的 refined 实例（和类型）:</span>
+<span class="tok-k">val</span> <span class="tok-n">refinedMockPersister</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Persister</span> <span class="tok-o">{</span>
+  <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">doPersist</span><span class="tok-o">(</span><span class="tok-n">e</span><span class="tok-k">:</span> <span class="tok-kt">Entity</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">()</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="package-object"><a class="anchor" href="#package-object"></a>9. Package Object</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="http://www.scala-lang.org/docu/files/packageobjects/packageobjects.html">Package object</a> 在 Scala 2.8 中加入，尽管它没有很好的扩展类型系统，
+但是提供了一个非常有用的模式，允许我们"一次性导入一堆东西（importing a bunch of stuff together）"，同时还是编译器寻找隐式转换的地方。
+这里，我们的讨论将局限于它的第一个用法，即将数据聚合在一起：</p>
+</div>
+<div class="paragraph">
+<p>声明一个 package object 很简单，只需要使用关键字 <code>package</code> 和 <code>object</code>，例如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// src/main/scala/com/garden/apples/package.scala</span>
+
+<span class="tok-k">package</span> <span class="tok-nn">com.garden</span>
+
+<span class="tok-k">package</span> <span class="tok-nn">object</span> <span class="tok-n">apples</span> <span class="tok-k">extends</span> <span class="tok-nc">RedApples</span> <span class="tok-k">with</span> <span class="tok-nc">GreenApples</span> <span class="tok-o">{</span>
+  <span class="tok-k">val</span> <span class="tok-n">redApples</span> <span class="tok-k">=</span> <span class="tok-nc">List</span><span class="tok-o">(</span><span class="tok-n">red1</span><span class="tok-o">,</span> <span class="tok-n">red2</span><span class="tok-o">)</span>
+  <span class="tok-k">val</span> <span class="tok-n">greenApples</span> <span class="tok-k">=</span> <span class="tok-nc">List</span><span class="tok-o">(</span><span class="tok-n">green1</span><span class="tok-o">,</span> <span class="tok-n">green2</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">RedApples</span> <span class="tok-o">{</span>
+  <span class="tok-k">val</span> <span class="tok-n">red1</span><span class="tok-o">,</span> <span class="tok-n">red2</span> <span class="tok-k">=</span> <span class="tok-s">&quot;red&quot;</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">GreenApples</span> <span class="tok-o">{</span>
+  <span class="tok-k">val</span> <span class="tok-n">green1</span><span class="tok-o">,</span> <span class="tok-n">green2</span> <span class="tok-k">=</span> <span class="tok-s">&quot;green&quot;</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>通常人们会将 package object 放在一个名为 <code>package.scala</code> 的文件中，
+再将该文件又放在这些对象所属的包下，例如上面的源文件路径和 package。</p>
+</div>
+<div class="paragraph">
+<p>使用时，你会获得极大的好处，
+这是因为当你导入这个 "package" 时，
+你会导入定义在该 package 中的任何状态：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">import</span> <span class="tok-nn">com.garden.apples._</span>
+
+<span class="tok-n">redApples</span> <span class="tok-n">foreach</span> <span class="tok-n">println</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-alias"><a class="anchor" href="#type-alias"></a>10. Type Alias</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Type alias 实际上并不是一种类型，而是一个能用来提高我们代码可读性的技巧：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">type</span> <span class="tok-kt">User</span> <span class="tok-o">=</span> <span class="tok-nc">String</span>
+<span class="tok-k">type</span> <span class="tok-kt">Age</span> <span class="tok-o">=</span> <span class="tok-nc">Int</span>
+
+<span class="tok-k">val</span> <span class="tok-n">data</span><span class="tok-k">:</span>  <span class="tok-kt">Map</span><span class="tok-o">[</span><span class="tok-kt">User</span>, <span class="tok-kt">Age</span><span class="tok-o">]</span> <span class="tok-k">=</span>  <span class="tok-nc">Map</span><span class="tok-o">.</span><span class="tok-n">empty</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用这个技巧，现在 Map 的定义一下变得"合理"了。
+如果我们只是使用了一个 <code>String =&gt; Int</code> 类型的 map，那么我们会降低代码的可读性。
+在这里，我们可以继续使用原始类型（也许我们需要原始类型的性能等），但是使用 Type Alias <strong>命名</strong>它们，便于以后的读者理解这个类。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-note" title="Note"></i>
+</td>
+<td class="content">
+注意，当你为一个类创建别名时，不会将伴生对象关联在一起。例如，
+假设你定义了一个 <code>case class Person(name: String)</code> 和一个别名类型 <code>User = Person</code>。
+调用 <code>User("John")</code> 会导致<em>错误</em>，因为 <code>Person("John")</code> 会隐式调用 <code>Person</code> 伴生对象的 <code>apply</code> 方法，
+但是伴生对象在这种情况下没有被定义别名，所以 <code>User("John")</code> 就报错。
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="abstract-type-member"><a class="anchor" href="#abstract-type-member"></a>11. Abstract Type Member</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>让我们进一步深入使用 Type Aliases，这样的用法称为 Abstract Type Members。</p>
+</div>
+<div class="paragraph">
+<p>有了 Abstract Type Members，我们可以做到"定义一个抽象类型，并希望其他人告诉我具体类型 - 我们可以用 MyType 来引用这个类型"。
+Abstract Type Members 最基础的功能是允许我们无需使用 <code>class Clazz[A, B]</code> 构建泛型类（模板），
+我们可以在类中命名 abstract type member(s)，例如：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">SimplestContainer</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span>      <span class="tok-c1">// Abstract Type Member</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>对于熟悉 Java 的人来说，上面的语法看起来与 <code>Container&lt;A&gt;</code> 类似，
+但我们会在 <a href="#path-dependent-type">Path Dependent Types</a> 和下面的例子中看到 Abstract Type Members 功能更强大。</p>
+</div>
+<div class="paragraph">
+<p>需要注意的是尽管 <code>type A</code> 的注释中包含 "abstract"，但是它与抽象字段不同 - 所以即使我们不"实现"类型成员 A，也可以创建一个 SimplestContainer 实例：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">new</span> <span class="tok-nc">SimplestContainer</span> <span class="tok-c1">// 合法，但是 A 是 &quot;anything&quot;</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>你可能想知道 <code>A</code> 是什么类型，考虑到我们没有提供任何关于它的信息。事实上，<code>type A</code> 是 <code>type A &gt;: Nothing &lt;: Any</code> 的简写，意味着 A 可以是"任意类型（anything）"。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">IntContainer</span> <span class="tok-k">extends</span> <span class="tok-nc">SimplestContainer</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span> <span class="tok-o">=</span> <span class="tok-nc">Int</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">value</span> <span class="tok-k">=</span> <span class="tok-mi">42</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>因为我们使用 <a href="#type-alias">Type Alias</a> 提供了一个抽象类型，现在我们可以实现一个返回 <code>Int</code> 的方法。</p>
+</div>
+<div class="paragraph">
+<p>当我们对 Abstract Type Members 应用类型约束时，事情变得更有趣了。
+比如，想象你想要定义一个只能存储任意 <code>Number</code> 实例的容器。
+我们可以在定义 type members 加上这样的约束：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">OnlyNumbersContainer</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Number</span>
+  <span class="tok-k">def</span> <span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>或者我们可以稍后在类层次结构中添加约束，例如通过混入声明 "only Numbers" 的特质：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">SimpleContainer</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span>
+  <span class="tok-k">def</span> <span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">OnlyNumbers</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Number</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">val</span> <span class="tok-n">ints</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">SimpleContainer</span> <span class="tok-k">with</span> <span class="tok-nc">OnlyNumbers</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">A</span> <span class="tok-o">=</span> <span class="tok-nc">Integer</span>
+  <span class="tok-k">def</span> <span class="tok-n">value</span> <span class="tok-k">=</span> <span class="tok-mi">12</span>
+<span class="tok-o">}</span>
+
+<span class="tok-c1">// 下面的定义不能通过编译</span>
+<span class="tok-k">val</span> <span class="tok-k">_</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">SimpleContainer</span> <span class="tok-k">with</span> <span class="tok-nc">OnlyNumbers</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">value</span> <span class="tok-k">=</span> <span class="tok-s">&quot;&quot;</span> <span class="tok-c1">// error: type mismatch; found: String(&quot;&quot;); required: this.A</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如你所看到的，我们可以像使用 Type Parameters 一样使用 Abstract Type Members，
+但是我们无需忍受显式四处传递类型的痛苦 - 因为类型是个字段，我们需要传递。
+我们需要付出的代价就是按名称绑定这些类型。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="self-recursive-type"><a class="anchor" href="#self-recursive-type"></a>12. Self-Recursive Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在多数文献中，Self-recursive Types 被称为 <strong>F-Bounded Types</strong>，
+所以你会发现许多文章或者博客都提到 "F-bounded"。
+实际上，F-bounded 是 "self-resurive" 的另一个称呼，表示<em>子类型约束自身</em>被出现在类型参数左侧的一个 binders 参数化情况。
+由于 self-recursive 含义更直观，所以我们会本小节中继续使用（而小节标题旨在帮助那些试图 google 什么是 "F-bounded" 的人）</p>
+</div>
+<div class="sect2">
+<h3 id="f-bounded-type"><a class="anchor" href="#f-bounded-type"></a>12.1. F-Bounded Type</h3>
+<div class="paragraph">
+<p>虽然 self-resurive type 并不是 Scala 的特定类型，但是有时还是会引起一些注意。
+对于许多人来说，一个熟悉（也有可能不知道）的 self-recursive type 例子是 Java 的 <code>Enum&lt;E&gt;</code>，如果你对此感兴趣，
+可以查看 <a href="http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/6-b14/java/lang/Enum.java">Enum 源码</a>。
+不过现在让我们回到 Scala ，首先看看我们实际上在讨论什么。</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+在本小节，我们不会深入讨论这一类型。
+如果你对在 Scala 中深入使用 self-recursive type 感兴趣，可以看看 Kris Nuttycombe 的 <a href="http://logji.blogspot.se/2012/11/f-bounded-type-polymorphism-give-up-now.html">F-Bounded Type Polymorphism Considered Tricky</a>。
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>想象你有一个 <code>Fruit</code> 特质，<code>Apple</code> 和 <code>Orange</code> 类继承了这个特质。Fruit 特质还有一个 "compareTo" 方法，
+现在问题来了：想象一下你想实现 "我不能用 oranges 与 apples 比较，因为它们是完全不同的东西！"。
+首先让我们看看不考虑编译安全的最简单实现：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 最简单的实现，Fruit 没有被自递归参数化</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">Fruit</span> <span class="tok-o">{</span>
+  <span class="tok-k">final</span> <span class="tok-k">def</span> <span class="tok-n">compareTo</span><span class="tok-o">(</span><span class="tok-n">other</span><span class="tok-k">:</span> <span class="tok-kt">Fruit</span><span class="tok-o">)</span><span class="tok-k">:</span> <span class="tok-kt">Boolean</span> <span class="tok-o">=</span> <span class="tok-kc">true</span>   <span class="tok-c1">// 在我们的例子中实现不重要，我们只关心编译时</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">Apple</span>  <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span>
+<span class="tok-k">class</span> <span class="tok-nc">Orange</span> <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span>
+
+<span class="tok-k">val</span> <span class="tok-n">apple</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Apple</span><span class="tok-o">()</span>
+<span class="tok-k">val</span> <span class="tok-n">orange</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Orange</span><span class="tok-o">()</span>
+
+<span class="tok-n">apple</span> <span class="tok-n">compareTo</span> <span class="tok-n">orange</span> <span class="tok-c1">// 编译成功，但我们希望这句话不能通过编译</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在上面朴素的实现中，因为 <code>Fruit</code> 特质不知道任何继承它的类的线索，所以不能限制 compareTo 的签名使得其只能接受"<em>与 <code>this</code> 相同的子类</em>（<em>the same subclass as</em> <code>this</code>）"的参数。
+让我们使用 <strong>Self Recursive Type Parameter</strong> 重写这个例子：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">Fruit</span><span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Fruit</span><span class="tok-o">[</span><span class="tok-kt">T</span><span class="tok-o">]]</span> <span class="tok-o">{</span>
+  <span class="tok-k">final</span> <span class="tok-k">def</span> <span class="tok-n">compareTo</span><span class="tok-o">(</span><span class="tok-n">other</span><span class="tok-k">:</span> <span class="tok-kt">Fruit</span><span class="tok-o">[</span><span class="tok-kt">T</span><span class="tok-o">])</span><span class="tok-k">:</span> <span class="tok-kt">Boolean</span> <span class="tok-o">=</span> <span class="tok-kc">true</span> <span class="tok-c1">// 在我们的例子中实现并不重要</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">Apple</span>  <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span><span class="tok-o">[</span><span class="tok-kt">Apple</span><span class="tok-o">]</span>
+<span class="tok-k">class</span> <span class="tok-nc">Orange</span> <span class="tok-k">extends</span> <span class="tok-nc">Fruit</span><span class="tok-o">[</span><span class="tok-kt">Orange</span><span class="tok-o">]</span>
+
+<span class="tok-k">val</span> <span class="tok-n">apple</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Apple</span>
+<span class="tok-k">val</span> <span class="tok-n">orange</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Orange</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>注意到 <code>Fruit</code> 签名中的类型参数。你可以读作"我接受一个类型参数 <code>T</code>，并且 <code>T</code> 必须是一个 <code>Fruit[T]</code>"，
+要满足这样要求的唯一方法是像类 <code>Apple</code> 和 <code>Orange</code> 那样继承这个特质。
+现在，如果我们尝试将 <code>apple</code> 与 <code>orange</code> 比较，我们会得到一个编译错误：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="repl language-repl">scala> orange compareTo apple
+<console>:13: error: type mismatch;
+ found   : Apple
+ required: Fruit[Orange]
+              orange compareTo apple
+
+scala> orange compareTo orange
+res1: Boolean = true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在我们能确定我们只能将 apples 与 apples 比较，其他水果与同类型的 Fruit（<em>子类</em>）比较。
+当然这里还有更多需要讨论的 - 我们能将 <code>Apple</code> 和 <code>Orange</code> 的子类分别与 <code>Apple</code> 和 <code>Orange</code> 比较吗？
+因为在类型层次中实现 <code>Apple</code> 和 Orange 时，我们填入的类型参数分别是 <code>Apple</code> 和 <code>Orange</code>，
+我们的意思是 <code>Apple</code> 只能与 <code>Apple</code> 比较，这也意味着 <code>Apple</code> 的子类可以互相比较 -
+这依然满足 Fruit 签名的 <code>compareTo</code> 限制，因为现在我们的调用右边是比 <code>Fruit[Apple]</code> 更具体的类型。
+比如，让我们尝试将一个日本 apple（ja. "りんご", "ringo"）和一个波兰 apple（pl. "Jabłuszko"）比较：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">`りんご`</span>  <span class="tok-k">extends</span> <span class="tok-nc">Apple</span>
+<span class="tok-k">object</span> <span class="tok-nc">Jabłuszko</span> <span class="tok-k">extends</span> <span class="tok-nc">Apple</span>
+
+<span class="tok-n">`りんご`</span> <span class="tok-n">compareTo</span> <span class="tok-nc">Jabłuszko</span>
+<span class="tok-c1">// true</span>
+</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+你可以使用更花哨的技巧实现同样的类型安全，比如 path dependent types 或者 implicit parameters 和 type classes。但是这里最简单的办法是使用 self-recursively type。
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-constructor-span-style-color-red-span"><a class="anchor" href="#type-constructor-span-style-color-red-span"></a>13. Type Constructor <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Type Constructor 的作用非常类似于函数，但是作用在类型级别。也就是说，在普通编程中，你可以有一个函数，接受一个值 <code>a</code> 并基于这个值返回另一个值 <code>b</code>；
+那么在类级别编程（type-level programming）中，你可以将 List[+A] 看成一个有类似功能的 type constructor：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>List[+A]</code> 接受一个类型参数（<code>A</code>），</p>
+</li>
+<li>
+<p><code>List[+A]</code> 本身不是一个合法的类型，你需要填入一个类型参数 <code>A</code> - "<em>构造这个类型（construct the type）</em>"，</p>
+</li>
+<li>
+<p>通过填入 <code>Int</code>，你会得到一个具体的类型 <code>List[Int]</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>基于上面的例子，你可以看到 type constructor 与普通的 constructors 非常相似 - 唯一的区别是我们在处理类型（type）而不是对象的实例（instances of objects）。
+在这里值得一提的是，在 Scala 中我们不能说某个变量的类型是 <code>List</code>，<strong>不像</strong>在 Java 中存在原始类型 <code>List&lt;Object&gt;</code>。
+Scala 更严格，不允许我们使用 <code>just a List</code> 代替一个具体类型，因为它期望一个真正的类型 - 而不是一个 type constructor。</p>
+</div>
+<div class="paragraph">
+<p>在 <strong>Scala 2.11.x</strong>，与这个主题相关的是，我们在 REPL 中有了一个强大的命令 - <code>:kind</code> 命令。
+该命令允许你检查一个类型是否是 higher kind。首先让我们来看看一个简单的 type constructor，比如 <code>List[+A]</code>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// Welcome to Scala version 2.11.0-M5 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0-ea).</span>
+<span class="tok-c1">// Type in expressions to have them evaluated.</span>
+
+<span class="tok-k">:</span><span class="tok-kt">kind</span> <span class="tok-kt">List</span>
+<span class="tok-c1">// scala.collection.immutable.List&#39;s kind is F[+A]</span>
+
+<span class="tok-k">:</span><span class="tok-kt">kind</span> <span class="tok-kt">-v</span> <span class="tok-kt">List</span>
+<span class="tok-c1">// scala.collection.immutable.List&#39;s kind is F[+A]</span>
+<span class="tok-c1">// * -(+)-&gt; *</span>
+<span class="tok-c1">// This is a type constructor: a 1st-order-kinded type.</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在这里我们看到 scalac 能够告诉我们 <code>List</code> 事实上是一个 type constructor（如果使用 <code>-verbose</code> 选项，编译器能输出更多的信息）。
+让我们来研究下这个语法： <code>* -&gt; *</code>。这个语法被广泛用于表示 kinds，实际上我发现该语法可能受到了 Haskell 的启发 - 这是 Haskell 用来打印函数签名的语法。
+这个语法最直观的读法是"接受一种类型，返回另一种类型"。你可能注意到我们省略了 Scala REPL 的输出，即关系中的加号（如 <code>* -(+)-&gt; *</code>），这表示 variance bounds，
+你可以在  <a href="#type-variance-in-scala">Type Variance in Scala</a> 一节了解更多。</p>
+</div>
+<div class="paragraph">
+<p>如前所述，<code>List[+A]</code>（或者 <code>Option[+A]</code>，或者 <code>Set[+A]</code>&#8230; 或者接受一个类型参数的类型）是 type constructor 最简单的情况 -
+它们只接受一个类型参数。我们称这样的 type constructor 为 <strong>first-order kinds</strong>（<code>* -&gt; *</code>）。
+值得一提的是，即使一个 <code>Pair[+A, +B]</code>（可以表示成 <code>* -&gt; * -&gt; *</code>）也还是 <strong>first-order</strong> 而不是 <strong>higher-order kind</strong>。
+在下一小节，我们将分析什么是 higher order kind 以及如何发现它们。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="higher-order-kind-span-style-color-red-span"><a class="anchor" href="#higher-order-kind-span-style-color-red-span"></a>14. Higher-Order Kind <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+TODO 现在还没有有价值的东西，即将到来&#8230;.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>另一方面，<strong>Higher Kinds</strong> <strong>Higher Kinds</strong> 允许我们对 type constructors 抽象，正如 type constructors 允许我们对 type 抽象。</p>
+</div>
+<div class="paragraph">
+<p>一个经典的例子就是 <code>Monad</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala-repl language-scala-repl">scala> import scalaz._
+import scalaz._
+
+scala> :k Monad // Finds locally imported types.
+Monad's kind is (* -> *) -> *
+This is a type constructor that takes type constructor(s): a higher-kinded type.</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="case-class"><a class="anchor" href="#case-class"></a>15. Case Class</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Case Classes 是 Scala 中最有用的编译器技巧之一。
+它们本身不是很复杂，能帮助实现非常乏味和无聊的 <code>equals</code>、<code>hashCode</code> 和 <code>toString</code> 等方法，
+还可以配合模式匹配调用 <code>apply</code>/<code>unapply</code> 方法等等。</p>
+</div>
+<div class="paragraph">
+<p>在 Scala 中可以像定义普通类一样定义一个 case class，但是需要加上 <code>case</code> 关键字：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Circle</span><span class="tok-o">(</span><span class="tok-n">radius</span><span class="tok-k">:</span> <span class="tok-kt">Double</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>只需要这一行代码，我们就实现了 <a href="http://en.wikipedia.org/wiki/Value_object">Value Object</a> 模式。
+定义了这样一个 case class 意味着我们自动得到了这些好处：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>case class 的实例是不可变的（immutable）</p>
+</li>
+<li>
+<p>可以使用 <code>equals</code> 进行比较，并且相等性是基于字段的（<strong>而不是</strong>像普通类那样比较对象相等性）</p>
+</li>
+<li>
+<p>它的 <code>hashcode</code> 遵循 <code>equals</code> 合同，也是基于这个类的字段</p>
+</li>
+<li>
+<p>它的构造方法参数自动成为 <code>public val</code> 而无需声明（例如上面例子中的 <code>radius</code>）</p>
+</li>
+<li>
+<p>它的 <code>toString</code> 是由类名和它所包含的字段的值组成的（对于我们的 Circle，toString 实现为 <code>def toString = s"Circle($radius)"</code>）。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>是时候总结一下我们学到的，然后应用到"现实生活"的例子中, 这一次我们要实现一个 Point 类，因为我们需要多于一个字段才能展示 case class 为我们提供的一些有趣特性：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Point</span><span class="tok-o">(</span><span class="tok-n">x</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">,</span> <span class="tok-n">y</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">)</span>      <i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-k">val</span> <span class="tok-n">a</span> <span class="tok-k">=</span> <span class="tok-nc">Point</span><span class="tok-o">(</span><span class="tok-mi">0</span><span class="tok-o">,</span> <span class="tok-mi">0</span><span class="tok-o">)</span>                   <i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-c1">// a.toString == &quot;Point(0,0)&quot;         </span><i class="conum" data-value="3"></i><b>(3)</b>
+
+<span class="tok-k">val</span> <span class="tok-n">b</span> <span class="tok-k">=</span> <span class="tok-n">a</span><span class="tok-o">.</span><span class="tok-n">copy</span><span class="tok-o">(</span><span class="tok-n">y</span> <span class="tok-k">=</span> <span class="tok-mi">10</span><span class="tok-o">)</span>                <i class="conum" data-value="4"></i><b>(4)</b>
+<span class="tok-c1">// b.toString == &quot;Point(0,10)&quot;</span>
+
+<span class="tok-n">a</span> <span class="tok-o">==</span> <span class="tok-nc">Point</span><span class="tok-o">(</span><span class="tok-mi">0</span><span class="tok-o">,</span> <span class="tok-mi">0</span><span class="tok-o">)</span>                      <i class="conum" data-value="5"></i><b>(5)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td><code>x</code> 和 <code>y</code> 被自动地定义成 <code>val</code> 成员</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>同时会生成一个 <code>Point</code> 伴生对象，带有 <code>apply(x: Int, y: Int)</code> 方法，可以用来创建一个 <code>Point</code> 实例</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>自动生成的 <code>toString</code> 方法包含类名和参数值</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td><code>copy(...)</code> 方法允许通过仅改变选择的字段轻松创建派生对象</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>case class 的相等性是基于值的（equals 和 hashCode 是根据 case class 的参数生成的）</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>不仅如此，case classes 还可以用于<em>模式匹配</em>，不论是"普通"还是"提取器（extractor）"语法（赋值给:）</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-nc">Circle</span><span class="tok-o">(</span><span class="tok-mf">2.5</span><span class="tok-o">)</span> <span class="tok-k">match</span> <span class="tok-o">{</span>
+  <span class="tok-k">case</span> <span class="tok-nc">Circle</span><span class="tok-o">(</span><span class="tok-n">r</span><span class="tok-o">)</span> <span class="tok-k">=&gt;</span> <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;Radius = &quot;</span> <span class="tok-o">+</span> <span class="tok-n">r</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">val</span> <span class="tok-nc">Circle</span><span class="tok-o">(</span><span class="tok-n">r</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-nc">Circle</span><span class="tok-o">(</span><span class="tok-mf">4.0</span><span class="tok-o">)</span>
+<span class="tok-k">val</span> <span class="tok-n">r2</span> <span class="tok-k">=</span> <span class="tok-n">r</span> <span class="tok-o">*</span> <span class="tok-n">r</span> <span class="tok-c1">// r2 现在是 16.0</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="enumeration"><a class="anchor" href="#enumeration"></a>16. Enumeration</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Scala 不像 Java 中有内置的 "enum"。但是我们可以使用一些（嵌入在 Enumeration 类）的小技巧，写出类似的枚举。</p>
+</div>
+<div class="sect2">
+<h3 id="enumeration-2"><a class="anchor" href="#enumeration-2"></a>16.1. Enumeration</h3>
+<div class="paragraph">
+<p>当前 Scala （2.10.x）实现类似枚举的结构是 <code>Enumeration</code> 类：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">Main</span> <span class="tok-k">extends</span> <span class="tok-nc">App</span> <span class="tok-o">{</span>
+
+  <span class="tok-k">object</span> <span class="tok-nc">WeekDay</span> <span class="tok-k">extends</span> <span class="tok-nc">Enumeration</span> <span class="tok-o">{</span>               <i class="conum" data-value="1"></i><b>(1)</b>
+    <span class="tok-k">type</span> <span class="tok-kt">WeekDay</span> <span class="tok-o">=</span> <span class="tok-nc">Value</span>                             <i class="conum" data-value="2"></i><b>(2)</b>
+    <span class="tok-k">val</span> <span class="tok-nc">Mon</span><span class="tok-o">,</span> <span class="tok-nc">Tue</span><span class="tok-o">,</span> <span class="tok-nc">Wed</span><span class="tok-o">,</span> <span class="tok-nc">Thu</span><span class="tok-o">,</span> <span class="tok-nc">Fri</span><span class="tok-o">,</span> <span class="tok-nc">Sat</span><span class="tok-o">,</span> <span class="tok-nc">Sun</span> <span class="tok-k">=</span> <span class="tok-nc">Value</span>    <i class="conum" data-value="3"></i><b>(3)</b>
+  <span class="tok-o">}</span>
+  <span class="tok-k">import</span> <span class="tok-nn">WeekDay._</span>                                   <i class="conum" data-value="4"></i><b>(4)</b>
+
+  <span class="tok-k">def</span> <span class="tok-n">isWorkingDay</span><span class="tok-o">(</span><span class="tok-n">d</span><span class="tok-k">:</span> <span class="tok-kt">WeekDay</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">!</span> <span class="tok-o">(</span><span class="tok-n">d</span> <span class="tok-o">==</span> <span class="tok-nc">Sat</span> <span class="tok-o">||</span> <span class="tok-n">d</span> <span class="tok-o">==</span> <span class="tok-nc">Sun</span><span class="tok-o">)</span>
+
+  <span class="tok-nc">WeekDay</span><span class="tok-o">.</span><span class="tok-n">values</span> <span class="tok-n">filter</span> <span class="tok-n">isWorkingDay</span> <span class="tok-n">foreach</span> <span class="tok-n">println</span> <i class="conum" data-value="5"></i><b>(5)</b>
+<span class="tok-o">}</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>首先我们声明一个可以包含我们枚举值的 object，继承 Enumeration</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>这里我们为 Enumerations 内部 <code>Value</code> 类型定义一个 <a href="#type-alias">Type Alias</a>，因为我们使用名字匹配 object 的名字，我们就可以通过 <code>WeekDay</code> 引用 <code>Value</code>（是的，这几乎就是个黑魔法）</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>这里我们使用 "multi assignment"，左边的每个 val 会被赋予不同 Value 的实例。你也可以写成 7 个 val</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>这句 import 做了两件事：首先我们不需要加上前缀 <code>WeekDay</code> 就可以引用 <code>Mon</code> 了；另外 import 也将 <code>type WeekDay</code> 引入当前作用域，所以我们可以在下面的方法定义中直接使用。</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>最后，我们得到一些枚举方法。这些方法并不是魔术，因为大多数方法在我们创建新的 Value 实例就存在了。</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>正如你所看到的，枚举在 Scala 中并不是内置的，而是基于 Scala 类型系统巧妙地实现的，使它看起来像一个枚举类。
+在某些情况下，这样的实现也许够用，但是还是没有 Java enum 丰富，比如添加新的值和行为。</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="enum"><a class="anchor" href="#enum"></a>16.2. @enum</h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<code>@enum</code> 注解当前还只是一个提议，正在 scala-internals 上讨论： <a href="https://groups.google.com/forum/#!topic/scala-internals/8RWkccSRBxQ%5B101-125-false%5D">enumeration must die</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>与即将到来的注解宏一起，我们可能会有 <code>@enum</code> 注解，这在相关 Scala Improvement Process 文档中有所描述： <a href="#enum-sip">[enum-sip]</a>.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-nd">@enum</span>
+<span class="tok-k">class</span> <span class="tok-nc">Day</span> <span class="tok-o">{</span>
+  <span class="tok-nc">Monday</span>    <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">goodDay</span> <span class="tok-k">=</span> <span class="tok-kc">false</span> <span class="tok-o">}</span>
+  <span class="tok-nc">Tuesday</span>   <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">goodDay</span> <span class="tok-k">=</span> <span class="tok-kc">false</span> <span class="tok-o">}</span>
+  <span class="tok-nc">Wednesday</span> <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">goodDay</span> <span class="tok-k">=</span> <span class="tok-kc">false</span> <span class="tok-o">}</span>
+  <span class="tok-nc">Thursday</span>  <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">goodDay</span> <span class="tok-k">=</span> <span class="tok-kc">false</span> <span class="tok-o">}</span>
+  <span class="tok-nc">Friday</span>    <span class="tok-o">{</span> <span class="tok-k">def</span> <span class="tok-n">goodDay</span> <span class="tok-k">=</span> <span class="tok-kc">true</span>  <span class="tok-o">}</span>
+  <span class="tok-k">def</span> <span class="tok-n">goodDay</span><span class="tok-k">:</span> <span class="tok-kt">Boolean</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="value-class"><a class="anchor" href="#value-class"></a>17. Value Class</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Value class 在 Scala 中已经存在很久了，而且你已经使用过很多次了，
+这是因为 Scala 中所有数值（numeric value）都使用这个编译器技巧避免类似 <code>scala.Int</code> 到 <code>java.lang.Integer</code> 的装箱和拆箱等。
+让我们回顾一下，Scala 的 <code>Array[Int]</code> 实际上是一个 JVM int[]（或者对于熟悉字节码的人来说，int[] 是一个称为 <code>[I]</code> 的 JVM 运行类型）
+我们知道，一个只包含数字的数组是非常快的，但是一个只包含引用的数组则相对较慢。</p>
+</div>
+<div class="paragraph">
+<p>好了，现在我们知道编译器有一些花哨的技巧避免将 <code>ints</code> 装箱到 <code>Integers</code> 不必要的转换。
+让我们看看从 Scala 2.10.x 开始该如何使用这样的功能。这样的功能被称为 "value classes"，可以很容易的用到你现有的类中。你只需要给你的类加上 <code>extends AnyVal</code>，并且遵循下面列出的一些规则。
+如果你对 <code>AnyVal</code> 不熟悉，可以查看 <a href="#unified-type-system-any-anyref-anyval">Unified Type System - Any, AnyRef, AnyVal</a> 一节。</p>
+</div>
+<div class="paragraph">
+<p>在我们的例子中，让我们来实现一个 <code>Meter</code> 作为普通 <code>Double</code> 的包装类并且能够将米（公制，meters）的数量转换成英尺（英制，<code>Foot</code>）的数量。
+我们之所以需要这个类，因为没有人理解英制单位系统;-)。但缺陷是，如果有 95% 的时间我们都只是使用
+一个普通 meter 值，为什么我们还需要为 <code>scala.Double</code> 包装类付出额外的运行时代价（每个实例需要额外的字节！）- 因为这是个面向欧洲市场的项目？
+这时候我们需要 value class 来拯救！</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Meter</span><span class="tok-o">(</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">Double</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">AnyVal</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">toFeet</span><span class="tok-k">:</span> <span class="tok-kt">Foot</span> <span class="tok-o">=</span> <span class="tok-nc">Foot</span><span class="tok-o">(</span><span class="tok-n">value</span> <span class="tok-o">*</span> <span class="tok-mf">0.3048</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Foot</span><span class="tok-o">(</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">Double</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">AnyVal</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">toMeter</span><span class="tok-k">:</span> <span class="tok-kt">Meter</span> <span class="tok-o">=</span> <span class="tok-nc">Meter</span><span class="tok-o">(</span><span class="tok-n">value</span> <span class="tok-o">/</span> <span class="tok-mf">0.3048</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在这所有的例子中，我们会使用 Case(Value) Class，虽然从技术上来说这并不需要（但是非常方便）。
+你也可以使用一个带 <code>val</code> 参数的普通类实现 Value Class，但通常使用 case classes 是最好的方法。
+你可能会问为什么只需要一个参数 - 这是因为我们在尝试避免包装值（wrapping the value），而这样的方法只适用于单个值，否则我们需要在某个地方维护一个 Tuple，但这得不偿失，我们很快会弄糊涂并且失去不包装的性能。
+所以记住，value class 只适用于单个参数，但是参数不一定要是原始类型，也可以是普通的类，如 <code>Fruit</code> 或者 <code>Person</code>，我们还是可以在 Value Class 中避免包装这些值。</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+要定义一个 Value Class，你只需要定义一个<strong>只有一个公有 val 参数</strong>并且继承了 <code>AnyVal</code> 的类，并遵循它的一些限制。
+这个参数<em>不需要</em>是原始类型，可以是任意类型。另一方面，这些限制（局限）是一个长列表，例如一个 Value Class 不能包含除 <code>def</code> 成员以外的任何字段，并且类本身不能被继承等。
+有关 Value Class 完整限制和更深入的示例，请参考 Scala 文档 <a href="http://docs.scala-lang.org/overviews/core/value-classes.html#summary_of_limitations">Value Classes - summary of limitations</a>。
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>好了，现在我们得到了 <strong>Value Case Classes</strong> <code>Meter</code> 和 <code>Foot</code>，让我们检查下当我们加上了 <code>extends AnyVal</code> 部分，
+将 Meter 从一个普通的 case class 变成一个 Value Class，生成的字节码是如何改变的。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="java language-java"><span class="tok-c1">// case class</span>
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-o">:</span><span class="tok-n">javap</span> <span class="tok-n">Meter</span>
+
+<span class="tok-kd">public</span> <span class="tok-kd">class</span> <span class="tok-nc">Meter</span> <span class="tok-kd">extends</span> <span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-na">lang</span><span class="tok-o">.</span><span class="tok-na">Object</span> <span class="tok-kd">implements</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Product</span><span class="tok-o">,</span><span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Serializable</span><span class="tok-o">{</span>
+    <span class="tok-kd">public</span> <span class="tok-kt">double</span> <span class="tok-nf">value</span><span class="tok-o">();</span>
+    <span class="tok-kd">public</span> <span class="tok-n">Foot</span> <span class="tok-nf">toFeet</span><span class="tok-o">();</span>
+    <span class="tok-c1">// ...</span>
+<span class="tok-o">}</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-o">:</span><span class="tok-n">javap</span> <span class="tok-n">Meter$</span>
+<span class="tok-kd">public</span> <span class="tok-kd">class</span> <span class="tok-nc">Meter</span><span class="tok-n">$</span> <span class="tok-kd">extends</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">runtime</span><span class="tok-o">.</span><span class="tok-na">AbstractFunction1</span> <span class="tok-kd">implements</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Serializable</span><span class="tok-o">{</span>
+    <span class="tok-c1">// ... (skipping not interesting in this use-case methods)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>以及为 value class 生成的字节码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="java language-java"><span class="tok-c1">// case value class</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-o">:</span><span class="tok-n">javap</span> <span class="tok-n">Meter</span>
+<span class="tok-kd">public</span> <span class="tok-kd">final</span> <span class="tok-kd">class</span> <span class="tok-nc">Meter</span> <span class="tok-kd">extends</span> <span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-na">lang</span><span class="tok-o">.</span><span class="tok-na">Object</span> <span class="tok-kd">implements</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Product</span><span class="tok-o">,</span><span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Serializable</span><span class="tok-o">{</span>
+    <span class="tok-kd">public</span> <span class="tok-kt">double</span> <span class="tok-nf">value</span><span class="tok-o">();</span>
+    <span class="tok-kd">public</span> <span class="tok-n">Foot</span> <span class="tok-nf">toFeet</span><span class="tok-o">();</span>
+    <span class="tok-c1">// ...</span>
+<span class="tok-o">}</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-o">:</span><span class="tok-n">javap</span> <span class="tok-n">Meter$</span>
+<span class="tok-kd">public</span> <span class="tok-kd">class</span> <span class="tok-nc">Meter</span><span class="tok-n">$</span> <span class="tok-kd">extends</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">runtime</span><span class="tok-o">.</span><span class="tok-na">AbstractFunction1</span> <span class="tok-kd">implements</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Serializable</span><span class="tok-o">{</span>
+    <span class="tok-kd">public</span> <span class="tok-kd">final</span> <span class="tok-n">Foot</span> <span class="tok-n">toFeet$extension</span><span class="tok-o">(</span><span class="tok-kt">double</span><span class="tok-o">);</span>
+    <span class="tok-c1">// ...</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>基本上这里只有一件事值得我们关注，编译器为 Value Class 生成的 Meter 伴生类有了一个新方法 - <code>toFeet$extension(double): Foot</code>。
+在此之前，这个方法只是 Meter 类的实例方法，不接受任何参数（所以它实际上是 <code>toFeet(): Foot</code>）。生成的方法被标记为 "extension"，
+这实际上正是我们给这种方法的名称（.NET 开发者可能知道这是在做什么）。</p>
+</div>
+<div class="paragraph">
+<p>我们使用 Value Classes 的目的是避免分配一个 value object，而是直接使用被包装的值，
+那么我们必须停止使用实例方法 - 因为这些实例方法会创建一个包装类（<code>Meter</code>）等。
+我们能做的是将这个实例方法提升为<strong>扩展方法（extension method）</strong>，正如我们存储在 <code>Meter</code> 伴生对象中那些方法，
+另外不直接使用实例的 <code>value: Double</code> 字段，而是每次调用<strong>扩展方法</strong>时传递一个 Double。</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<strong>Extension methods</strong> 和 <strong>Implicit conversion</strong> 有同样的功能（Implicit conversion 更强大和通用），
+但是某些方面比 conversions 要简单 - 它们避免了创建 "Wrapper" 对象，
+而 implicit conversions 需要创建 wrapper 对象才能提供 "added methods" 的功能。
+Extension methods 采取了重写生成方法的方式，所以它们接受需要被扩展的类型作为第一个参数。
+举个例子，当你调用 <code>3.toHexString</code>，这个方法是通过 implicit conversion 加入到 Int 中，
+但是 implicit conversion 的转换目标是 <code>class RichInt extends AnyVal</code>，
+所以 RichInt 是一个 Value Class。那么这次调用不会创建一个 <code>RichInt</code> 对象，而是会被重写为 <code>RichInt$.$MODULE$.toHexString$extension(3)</code>，这样就避免了创建 RichInt。
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>让我们使用我们新学到的知识来调查在 <code>Meter</code> 例子中编译器实际上会为我们做什么。
+我们编写的代码时，会在源代码旁边注释解释编译器实际产生的字节码（即，当我们运行代码时会发生什么）</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 源代码                       // 产生的字节码实际做了什么</span>
+
+<span class="tok-k">val</span> <span class="tok-n">m</span><span class="tok-k">:</span> <span class="tok-kt">Meter</span>  <span class="tok-o">=</span> <span class="tok-nc">Meter</span><span class="tok-o">(</span><span class="tok-mf">12.0</span><span class="tok-o">)</span>    <span class="tok-c1">// 存储 12.0                                        </span><i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-k">val</span> <span class="tok-n">d</span><span class="tok-k">:</span> <span class="tok-kt">Double</span> <span class="tok-o">=</span> <span class="tok-n">m</span><span class="tok-o">.</span><span class="tok-n">value</span> <span class="tok-o">*</span> <span class="tok-mi">2</span>    <span class="tok-c1">// 存储浮点数相乘（12.0 * 2.0）                       </span><i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-k">val</span> <span class="tok-n">f</span><span class="tok-k">:</span> <span class="tok-kt">Foot</span>   <span class="tok-o">=</span> <span class="tok-n">m</span><span class="tok-o">.</span><span class="tok-n">toFeet</span>       <span class="tok-c1">// 调用 Meter$.$MODULE$.toFeet$extension(12.0)      </span><i class="conum" data-value="3"></i><b>(3)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>可能有人会认为这里会创建一个 Meter 对象，但是因为我们在使用 Value Class，实际上只存储被包装的值 - 也就是说在<strong>运行时</strong>，我们实际上在使用 double（赋值和类型检查依然“验证”这好像是一个 Meter 实例）</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>这里我们访问 Value Class 的 value（字段名字不重要）。注意到运行时虚拟机直接操作原始的 double，所以事实上并没有调用 <code>value</code> 方法，就好像我们在使用普通的 case class</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>这里似乎我们将要调用定义在 <code>Meter</code> 上的实例方法，但实际上，编译器已经用一个扩展方法调用代替了这次调用，然后向扩展方法传递了 12.0。我们得到了一个 Foot 实例&#8230;等等，<code>Foot</code> 也是定义成 Value Class，所以运行时我们再次得到一个普通的 double。
+我们不必关心关心源代码 - 使用 Value Class 我们能获得性能上的好处，还不影响代码的语义</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>这些就是 extension methods 和 value classes 的基础。如果你想了解更多关于 Value Class 的更多案例，请参考 <a href="http://docs.scala-lang.org/overviews/core/value-classes.html">official documentation&#8217;s section about Value Classes</a>
+其中 <strong>Mark Harrah</strong> 使用很多例子很好的解释了 Value Classes，所以在这里除了基本介绍我不会重复他的努力:-)。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-class-span-style-color-red-span"><a class="anchor" href="#type-class-span-style-color-red-span"></a>18. Type Class <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Type Classes 属于 Scala 中最强大的模式，可以总结为（如果你喜欢花哨的措辞）"ad-hoc polimorphism"。当你读完这节，就应该可以理解这个词的含义了。</p>
+</div>
+<div class="paragraph">
+<p>Type Classes 为我们解决的典型问题是不需要将两个类绑定在一起就可以提供可扩展的 API。
+这样一个严格绑定，可以使用 Type Classes 避免的例子是继承 <code>Writable</code> 接口，使得我们自定义数据类型可写：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 还没有 type classes</span>
+<span class="tok-k">trait</span> <span class="tok-nc">Writable</span><span class="tok-o">[</span><span class="tok-kt">Out</span><span class="tok-o">]</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">write</span><span class="tok-k">:</span> <span class="tok-kt">Out</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Num</span><span class="tok-o">(</span><span class="tok-n">a</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">,</span> <span class="tok-n">b</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">Writable</span><span class="tok-o">[</span><span class="tok-kt">Json</span><span class="tok-o">]</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">write</span> <span class="tok-k">=</span> <span class="tok-nc">Json</span><span class="tok-o">.</span><span class="tok-n">toJson</span><span class="tok-o">(</span><span class="tok-k">this</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用这种风格，继承并实现接口，我们将 <code>Num</code> 绑定到 <code>Writable</code> 接口，而且我们必须"此时此刻"就要提供 <code>write</code> 的实现，
+这使得其他人很难提供不同的 <code>write</code> 实现 - 他们必须继承 Num！
+另外一个痛点是，我们不能使用一个类两次继承同一个特质，提供不同的序列化目标（你不可以同时继承 <code>Writable[Json]</code> 和 <code>Writable[Protobuf]</code>）。</p>
+</div>
+<div class="paragraph">
+<p>所有的这些问题都可以使用基于 <code>Type Class</code> 而不是直接继承 <code>Writeable[Out]</code> 的方法解决。
+让我们试试看，并详细解释这是如何工作的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">Writes</span><span class="tok-o">[</span><span class="tok-kt">In</span>, <span class="tok-kt">Out</span><span class="tok-o">]</span> <span class="tok-o">{</span>                                               <i class="conum" data-value="1"></i><b>(1)</b>
+  <span class="tok-k">def</span> <span class="tok-n">write</span><span class="tok-o">(</span><span class="tok-n">in</span><span class="tok-k">:</span> <span class="tok-kt">In</span><span class="tok-o">)</span><span class="tok-k">:</span> <span class="tok-kt">Out</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">Writable</span><span class="tok-o">[</span><span class="tok-kt">Self</span><span class="tok-o">]</span> <span class="tok-o">{</span>                                               <i class="conum" data-value="2"></i><b>(2)</b>
+  <span class="tok-k">def</span> <span class="tok-n">write</span><span class="tok-o">[</span><span class="tok-kt">Out</span><span class="tok-o">]()(</span><span class="tok-k">implicit</span> <span class="tok-n">writes</span><span class="tok-k">:</span> <span class="tok-kt">Writes</span><span class="tok-o">[</span><span class="tok-kt">Self</span>, <span class="tok-kt">Out</span><span class="tok-o">])</span><span class="tok-k">:</span> <span class="tok-kt">Out</span> <span class="tok-o">=</span>
+    <span class="tok-n">writes</span> <span class="tok-n">write</span> <span class="tok-k">this</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">implicit</span> <span class="tok-k">val</span> <span class="tok-n">jsonNum</span> <span class="tok-k">=</span> <span class="tok-nc">Writes</span><span class="tok-o">[</span><span class="tok-kt">Num</span>, <span class="tok-kt">Json</span><span class="tok-o">]</span> <span class="tok-o">{</span>                            <i class="conum" data-value="3"></i><b>(3)</b>
+  <span class="tok-k">def</span> <span class="tok-o">(</span><span class="tok-n">n1</span><span class="tok-k">:</span> <span class="tok-kt">Num</span><span class="tok-o">,</span> <span class="tok-n">n2</span><span class="tok-k">:</span> <span class="tok-kt">Num</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-n">n1</span><span class="tok-o">.</span><span class="tok-n">a</span> <span class="tok-o">&lt;</span> <span class="tok-n">n1</span><span class="tok-o">.</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Num</span><span class="tok-o">(</span><span class="tok-n">a</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">Writable</span><span class="tok-o">[</span><span class="tok-kt">Num</span><span class="tok-o">]</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>首先我们定义一个 Type Class，它的 API 与之前的 <code>Writable</code> 特质类似，但是我们不将它混入到一个需要被写入的类，而是将其分开，并且为了知道它的具体实现，我们使用 <code>Self</code> <a href="#Type Parameter">类型参数</a></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>下一步我们将 <code>Writable</code> 特质使用 <code>Self</code> 参数化，然后序列化目标类型被移到 <code>write</code> 的签名。现在，write 还需要一个隐式 <code>Writes[Self, Out]</code> 实现处理序列化 - 这就是我们的 Type Class 的实例</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>这就是 Type Class 的实际实现，注意到我们将实例标记为 implicit，这样它就可用于 <code>write()(implicit Writes[_, _])</code> 方法</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="universal-trait-span-style-color-red-span"><a class="anchor" href="#universal-trait-span-style-color-red-span"></a>19. Universal Trait <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Universal traits are 是那些继承了 <code>Any</code> 的特质，通常它们应该只含有 <code>def</code>，没有初始化代码</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+TODO 实现文档 :-)
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="self-type-annotation"><a class="anchor" href="#self-type-annotation"></a>20. Self Type Annotation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Self Types</strong> 可用于表达"依赖（require）"关系，如果其他类要使用这个特质，它应该提供这个特质所依赖的实现。</p>
+</div>
+<div class="paragraph">
+<p>让我们看看一个例子，其中一个 service 需要一个 Module 提供的其他类型的 service。我们可以用下面的 Self Type 注解表达：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">Module</span> <span class="tok-o">{</span>
+  <span class="tok-k">lazy</span> <span class="tok-k">val</span> <span class="tok-n">serviceInModule</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">ServiceInModule</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">trait</span> <span class="tok-nc">Service</span> <span class="tok-o">{</span>
+  <span class="tok-k">this:</span> <span class="tok-kt">Module</span> <span class="tok-o">=&gt;</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">doTheThings</span><span class="tok-o">()</span> <span class="tok-k">=</span> <span class="tok-n">serviceInModule</span><span class="tok-o">.</span><span class="tok-n">doTheThings</span><span class="tok-o">()</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>第二行 <code>this: Module =&gt;</code> 可以被读作 "I&#8217;m a Module"。这看起来和定义一个继承 <code>Module</code> 的特质类似。
+那么这与直接继承 <code>Module</code> 有什么区别吗？</p>
+</div>
+<div class="paragraph">
+<p>当使用 self type 时，这意味其他人要使用 Service 必须在实例化时提供一个 Module 或者 Module 子类型实例：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">TestingModule</span> <span class="tok-k">extends</span> <span class="tok-nc">Module</span> <span class="tok-o">{</span> <span class="tok-cm">/*...*/</span> <span class="tok-o">}</span>
+
+<span class="tok-k">new</span> <span class="tok-nc">Service</span> <span class="tok-k">with</span> <span class="tok-nc">TestingModule</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>如果你尝试实例化而不混入所需要的特质，那么就会像下面这样失败：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">new</span> <span class="tok-nc">Service</span> <span class="tok-o">{}</span>
+
+<span class="tok-c1">// class Service cannot be instantiated because it does not conform to its self-type Service with Module</span>
+<span class="tok-c1">//              new Service {}</span>
+<span class="tok-c1">//              ^</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>你还应该记住，使用 self-type 语法时可以指定一个以上的特质。现在让我们来谈谈为什么它叫做 self-type（除了可耻地点头"是的，这样的命名很合理“）。
+这是因为一种使用 self-type 的流行方式如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Service</span> <span class="tok-o">{</span>
+  <span class="tok-n">self</span><span class="tok-k">:</span> <span class="tok-kt">MongoModule</span> <span class="tok-kt">with</span> <span class="tok-kt">APIModule</span> <span class="tok-o">=&gt;</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">delegated</span> <span class="tok-k">=</span> <span class="tok-n">self</span><span class="tok-o">.</span><span class="tok-n">doTheThings</span><span class="tok-o">()</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>事实上，你可以使用任何合法标识符（不仅仅是 <code>this</code> 或者 <code>self</code>）然后在你的类中引用它。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="phantom-type"><a class="anchor" href="#phantom-type"></a>21. Phantom Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Phantom Types 听起来很奇怪，但它的作用很契合它的名字，可以解释为“永远不能实例化的类型”。
+通常我们不会直接使用它们，而是用它们在我们的类型中执行更严格的逻辑。</p>
+</div>
+<div class="paragraph">
+<p>在这个例子中，我们会使用一个 <code>Service</code> 类，包含 <code>start</code> 和 <code>stop</code> 方法。
+现在我们想确保你不能（类型系统不允许你）启动一个已经启动的 service，反之亦然。</p>
+</div>
+<div class="paragraph">
+<p>让我们开始准备我们的"标记特质"，它们不包含任何逻辑 - 我们仅仅使用它们来表达 service 的状态：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">sealed</span> <span class="tok-k">trait</span> <span class="tok-nc">ServiceState</span>
+<span class="tok-k">final</span> <span class="tok-k">class</span> <span class="tok-nc">Started</span> <span class="tok-k">extends</span> <span class="tok-nc">ServiceState</span>
+<span class="tok-k">final</span> <span class="tok-k">class</span> <span class="tok-nc">Stopped</span> <span class="tok-k">extends</span> <span class="tok-nc">ServiceState</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>注意我们将 <code>ServiceState</code> 标记为 <code>sealed</code> 确保其他人不能向我们的系统再添加新的状态。
+我们也将 <code>Started</code> 和 <code>Stopped</code> 定义为 final，这样其他人不能继承它们，然后向系统添加新的类型。</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><strong><code>sealed</code> 关键字</strong></p>
+</div>
+<div class="paragraph">
+<p><code>sealed</code> 确保所有继承同一个类或者特质的类都定义在同一个编译单元。
+比如，如果你可以在文件 <code>State.scala</code> 中定义 <code>sealed trait State</code> 和一些 state 实现，
+但是你不能在其他文件中继承 <code>State</code>（比如 MyStates.scala)</p>
+</div>
+<div class="paragraph">
+<p><code>sealed</code> 仅适用于它所定义的类型，不适用子类型。所以虽然你不能在其他文件中继承 State，
+但是你定义了一个这样的类型 <code>trait UserDefinedState extends State</code>，那么其他用户还是可以定义 <code>UserDefinedState</code> 的子类型。
+如果你想要阻止这样的事情，你应该像我们在这个例子中一样将子类型标记为 final。</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>定义好之后，我们就可以将它们作为 Phantom Types 使用。
+首先让我们定义一个 Service 类，接受一个 <code>State</code> 类型参数 - <em>注意在这个类中我们没有用到任何 <code>State</code> 类型的值</em>。
+它仅仅存在那里，像一个鬼魂，或者幽灵 - 这就是它名字的来源：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Service</span><span class="tok-o">[</span><span class="tok-kt">State</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">ServiceState</span><span class="tok-o">]</span> <span class="tok-nc">private</span> <span class="tok-o">()</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">start</span><span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-k">&gt;:</span> <span class="tok-kt">State</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Stopped</span><span class="tok-o">]()</span> <span class="tok-k">=</span> <span class="tok-k">this</span><span class="tok-o">.</span><span class="tok-n">asInstanceOf</span><span class="tok-o">[</span><span class="tok-kt">Service</span><span class="tok-o">[</span><span class="tok-kt">Started</span><span class="tok-o">]]</span>
+  <span class="tok-k">def</span> <span class="tok-n">stop</span><span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-k">&gt;:</span> <span class="tok-kt">State</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Started</span><span class="tok-o">]()</span> <span class="tok-k">=</span> <span class="tok-k">this</span><span class="tok-o">.</span><span class="tok-n">asInstanceOf</span><span class="tok-o">[</span><span class="tok-kt">Service</span><span class="tok-o">[</span><span class="tok-kt">Stopped</span><span class="tok-o">]]</span>
+<span class="tok-o">}</span>
+<span class="tok-k">object</span> <span class="tok-nc">Service</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">create</span><span class="tok-o">()</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Service</span><span class="tok-o">[</span><span class="tok-kt">Stopped</span><span class="tok-o">]</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>然后在伴生对象中，我们定义了 Service 的一个实例，一开始它的状态是 <code>Stopped</code>。<code>Stopped</code> 状态符合类型参数的类型限制（<code>&lt;: ServiceState</code>）。</p>
+</div>
+<div class="paragraph">
+<p>当我们想要启动/停止一个已经存在的 Service，有趣的事情发生了。例如，<code>start</code> 方法的类型限制只对 <code>T</code> 的一个值 <code>Stopped</code> 有效。
+在我们的例子中，为了转换到相反的状态，我们返回同样的实例，并且显式转换到需要的状态。
+因为没有其他类型使用这个类型，在转换过程你不会遇到 class cast 异常。</p>
+</div>
+<div class="paragraph">
+<p>现在让我们使用 REPL 来研究上面的例子，这将作为本节一个很好的补充：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-k">val</span> <span class="tok-n">initiallyStopped</span> <span class="tok-k">=</span> <span class="tok-nc">Service</span><span class="tok-o">.</span><span class="tok-n">create</span><span class="tok-o">()</span> <i class="conum" data-value="1"></i><b>(1)</b>
+<span class="tok-n">initiallyStopped</span><span class="tok-k">:</span> <span class="tok-kt">Service</span><span class="tok-o">[</span><span class="tok-kt">Stopped</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Service</span><span class="tok-k">@</span><span class="tok-mi">337688</span><span class="tok-n">d3</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-k">val</span> <span class="tok-n">started</span> <span class="tok-k">=</span> <span class="tok-n">initiallyStopped</span><span class="tok-o">.</span><span class="tok-n">start</span><span class="tok-o">()</span>  <i class="conum" data-value="2"></i><b>(2)</b>
+<span class="tok-n">started</span><span class="tok-k">:</span> <span class="tok-kt">Service</span><span class="tok-o">[</span><span class="tok-kt">Started</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Service</span><span class="tok-k">@</span><span class="tok-mi">337688</span><span class="tok-n">d3</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-k">val</span> <span class="tok-n">stopped</span> <span class="tok-k">=</span> <span class="tok-n">started</span><span class="tok-o">.</span><span class="tok-n">stop</span><span class="tok-o">()</span>            <i class="conum" data-value="3"></i><b>(3)</b>
+<span class="tok-n">stopped</span><span class="tok-k">:</span> <span class="tok-kt">Service</span><span class="tok-o">[</span><span class="tok-kt">Stopped</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-nc">Service</span><span class="tok-k">@</span><span class="tok-mi">337688</span><span class="tok-n">d3</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-n">stopped</span><span class="tok-o">.</span><span class="tok-n">stop</span><span class="tok-o">()</span>                          <i class="conum" data-value="4"></i><b>(4)</b>
+<span class="tok-o">&lt;</span><span class="tok-n">console</span><span class="tok-k">&gt;:</span><span class="tok-mi">16</span><span class="tok-k">:</span> <span class="tok-kt">error:</span> <span class="tok-kt">inferred</span> <span class="tok-k">type</span> <span class="tok-kt">arguments</span> <span class="tok-o">[</span><span class="tok-kt">Stopped</span><span class="tok-o">]</span> <span class="tok-k">do</span> <span class="tok-n">not</span> <span class="tok-n">conform</span> <span class="tok-n">to</span> <span class="tok-n">method</span> <span class="tok-n">stop</span><span class="tok--Symbol">&#39;s</span>
+                     <span class="tok-k">type</span> <span class="tok-kt">parameter</span> <span class="tok-kt">bounds</span> <span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-k">&gt;:</span> <span class="tok-kt">Stopped</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Started</span><span class="tok-o">]</span>
+              <span class="tok-n">stopped</span><span class="tok-o">.</span><span class="tok-n">stop</span><span class="tok-o">()</span>
+                      <span class="tok-o">^</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-n">started</span><span class="tok-o">.</span><span class="tok-n">start</span><span class="tok-o">()</span>                         <i class="conum" data-value="5"></i><b>(5)</b>
+<span class="tok-o">&lt;</span><span class="tok-n">console</span><span class="tok-k">&gt;:</span><span class="tok-mi">15</span><span class="tok-k">:</span> <span class="tok-kt">error:</span> <span class="tok-kt">inferred</span> <span class="tok-k">type</span> <span class="tok-kt">arguments</span> <span class="tok-o">[</span><span class="tok-kt">Started</span><span class="tok-o">]</span> <span class="tok-k">do</span> <span class="tok-n">not</span> <span class="tok-n">conform</span> <span class="tok-n">to</span> <span class="tok-n">method</span> <span class="tok-n">start</span><span class="tok--Symbol">&#39;s</span>
+                     <span class="tok-k">type</span> <span class="tok-kt">parameter</span> <span class="tok-kt">bounds</span> <span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-k">&gt;:</span> <span class="tok-kt">Started</span> <span class="tok-k">&lt;:</span> <span class="tok-kt">Stopped</span><span class="tok-o">]</span>
+              <span class="tok-n">started</span><span class="tok-o">.</span><span class="tok-n">start</span><span class="tok-o">()</span></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>这里我们创建了一个初始实例，初始状态为 <code>Stopped</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>可以启动一个状态为 <code>Stopped</code> 的 service，返回类型是 <code>Service[Started]</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>可以停止一个状态为 <code>Started</code> 的 service，返回类型是 <code>Service[Stopped]</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>然而停止一个已经停止的 service（<code>Service[Stopped]</code>）是非法的，不能通过编译。注意打印出的类型限制！</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>类似地，启动一个已经启动的 service（<code>Service[Started]</code>）也是非法的。注意打印出的类型限制！</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>正如你所看到的，Phantom Types 是另一种使得我们代码更加类型安全的方式（或者我应该说 "状态安全"！？）</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+如果你好奇哪个”不那么疯狂的库“使用了 Phantom Type，
+一个很好的例子是 <a href="https://github.com/foursquare/rogue">Foursquare Rogue</a>（MongoDB 查询 DSL），
+使用了 Phantom Type 确保一个 query builder 在正确的状态 - 比如可以在 builder 上正确调用 limit(3)。
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="structural-type"><a class="anchor" href="#structural-type"></a>22. Structural Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>如果你想有一个直观的理解，Structural Type 通常被描述为"<strong>类型安全的鸭子类型（type-safe duck typing)</strong>"，</p>
+</div>
+<div class="paragraph">
+<p>到现在为止，我们都是从“它是否实现了接口 X"的方式思考类型。有了 structural types，我们可以更进一步，开始推理一个给定对象的结构（这就是它名字的来源）。
+当使用 structure typing 检查一个类型时，我们需要问"这个类型是否有符合这个签名的方法"。</p>
+</div>
+<div class="paragraph">
+<p>让我们看看一个非常流行的例子，理解为什么 structural type 很强大。
+想象一下，你有许多可以被关闭（<strong>closed</strong>)的类。在 Java 的世界中，人们通常会实现 <code>java.io.Closeable</code> 接口，以便编写一个常用的 <code>Closeable</code> 工具类（事实上，<strong>Google Guava</strong> 便提供了这样的工具类）。
+现在想象有其他人实现了一个 <code>MyOwnCloseable</code> 类但是没有继承 <code>java.io.Closeable</code>。
+由于静态类型限制，你的 <code>Closeables</code> 库就不能使用这个类了，你不能将一个 MyOwnCloseable 实例传递给你的库。
+让我们使用 Structural Typing 来解决这个问题：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">type</span> <span class="tok-kt">JavaCloseable</span> <span class="tok-o">=</span> <span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-n">io</span><span class="tok-o">.</span><span class="tok-nc">Closeable</span>
+<span class="tok-c1">// 注意，JavaCloseable 实际上是: { def close(): Unit }</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">MyOwnCloseable</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">close</span><span class="tok-o">()</span><span class="tok-k">:</span> <span class="tok-kt">Unit</span> <span class="tok-o">=</span> <span class="tok-o">()</span>
+<span class="tok-o">}</span>
+
+
+<span class="tok-c1">// 接受一个 Structural Type 的方法</span>
+<span class="tok-k">def</span> <span class="tok-n">closeQuietly</span><span class="tok-o">(</span><span class="tok-n">closeable</span><span class="tok-k">:</span> <span class="tok-o">{</span> <span class="tok-kt">def</span> <span class="tok-kt">close</span><span class="tok-o">()</span><span class="tok-kt">:</span> <span class="tok-kt">Unit</span> <span class="tok-o">})</span> <span class="tok-k">=</span>
+  <span class="tok-k">try</span> <span class="tok-o">{</span>
+    <span class="tok-n">closeable</span><span class="tok-o">.</span><span class="tok-n">close</span><span class="tok-o">()</span>
+  <span class="tok-o">}</span> <span class="tok-k">catch</span> <span class="tok-o">{</span>
+    <span class="tok-k">case</span> <span class="tok-n">ex</span><span class="tok-k">:</span> <span class="tok-kt">Exception</span> <span class="tok-o">=&gt;</span> <span class="tok-c1">// 忽略...</span>
+  <span class="tok-o">}</span>
+
+
+<span class="tok-c1">// 接受一个 java.io.File 实例(实现了 Closeable):</span>
+<span class="tok-n">closeQuietly</span><span class="tok-o">(</span><span class="tok-k">new</span> <span class="tok-nc">StringReader</span><span class="tok-o">(</span><span class="tok-s">&quot;example&quot;</span><span class="tok-o">))</span>
+
+<span class="tok-c1">// 接受一个 MyOwnCloseable 实例</span>
+<span class="tok-n">closeQuietly</span><span class="tok-o">(</span><span class="tok-k">new</span> <span class="tok-nc">MyOwnCloseable</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>structural type 被定义为 closeQuietly 的参数。这基本在说我们希望这个类型应该包含 close 方法。
+它还可以有其他方法 - 所以 structural types 不是一个精确的匹配，而是定义了一个合法类型至少要包含方法的最小集合。</p>
+</div>
+<div class="paragraph">
+<p>使用 <strong>Structural Typing</strong> 要牢记的另一个事实是它有非常巨大的（负面的）运行时性能影响，因为它是使用反射实现的。
+在这个例子中我们不会去查看对应的字节码，但是要记住，在 Scala REPL 中使用 :javap 可以非常容易地查看 scala（或者 java）类生成的字节码。
+所以你应该自己去尝试下。</p>
+</div>
+<div class="paragraph">
+<p>在我们讨论下一个话题前，让我简要介绍一个小巧但是整洁的技巧。
+想象一下，你的 Structural Type 非常大，一个例子是表示一个可以打开，使用，然后关闭的类型。
+通过在 Structural Type 中使用 Type Alias，我们可以将类型定义与方法定义分开，正如下面这种情况：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">type</span> <span class="tok-kt">OpenerCloser</span> <span class="tok-o">=</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">open</span><span class="tok-o">()</span><span class="tok-k">:</span> <span class="tok-kt">Unit</span>
+  <span class="tok-k">def</span> <span class="tok-n">close</span><span class="tok-o">()</span><span class="tok-k">:</span> <span class="tok-kt">Unit</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">def</span> <span class="tok-n">on</span><span class="tok-o">(</span><span class="tok-n">it</span><span class="tok-k">:</span> <span class="tok-kt">OpenerCloser</span><span class="tok-o">)(</span><span class="tok-n">fun</span><span class="tok-k">:</span> <span class="tok-kt">OpenerCloser</span> <span class="tok-o">=&gt;</span> <span class="tok-nc">Unit</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">{</span>
+  <span class="tok-n">it</span><span class="tok-o">.</span><span class="tok-n">open</span><span class="tok-o">()</span>
+  <span class="tok-n">fun</span><span class="tok-o">(</span><span class="tok-n">it</span><span class="tok-o">)</span>
+  <span class="tok-n">it</span><span class="tok-o">.</span><span class="tok-n">close</span><span class="tok-o">()</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>通过使用 type alias，我们使得 <code>def</code> 定义更加清晰了。
+我强烈建议对较大的 Structural Type 使用 Type Alias。
+最后提醒，考虑到 structural type 的负面性能影响，你总是要检查你是否真的需要 structural typing，而不能使用其他方式实现。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="path-dependent-type"><a class="anchor" href="#path-dependent-type"></a>23. Path Dependent Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Path dependent type 允许我们对一个类的内部类做类型检查。
+这一开始看起来很奇怪，但只要你看到这个类型的例子，你就会发现很直观：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Outer</span> <span class="tok-o">{</span>
+  <span class="tok-k">class</span> <span class="tok-nc">Inner</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">val</span> <span class="tok-n">out1</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Outer</span>
+<span class="tok-k">val</span> <span class="tok-n">out1in</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-n">out1</span><span class="tok-o">.</span><span class="tok-nc">Inner</span> <span class="tok-c1">// 具体实例, 从 Outer 的内部创建</span>
+
+<span class="tok-k">val</span> <span class="tok-n">out2</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Outer</span>
+<span class="tok-k">val</span> <span class="tok-n">out2in</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-n">out2</span><span class="tok-o">.</span><span class="tok-nc">Inner</span> <span class="tok-c1">// 另一个 Inner 实例, 外层实例是 out2</span>
+
+<span class="tok-c1">// 定义 path dependent type。其中 &quot;path&quot; 就是&quot;inside out1&quot;.</span>
+<span class="tok-k">type</span> <span class="tok-kt">PathDep1</span> <span class="tok-o">=</span> <span class="tok-n">out1</span><span class="tok-o">.</span><span class="tok-nc">Inner</span>
+
+
+<span class="tok-c1">// 类型检查</span>
+
+<span class="tok-k">val</span> <span class="tok-n">typeChecksOk</span><span class="tok-k">:</span> <span class="tok-kt">PathDep1</span> <span class="tok-o">=</span> <span class="tok-n">out1in</span>
+<span class="tok-c1">// OK</span>
+
+<span class="tok-k">val</span> <span class="tok-n">typeCheckFails</span><span class="tok-k">:</span> <span class="tok-kt">PathDep1</span> <span class="tok-o">=</span> <span class="tok-n">out2in</span>
+<span class="tok-c1">// &lt;console&gt;:27: error: type mismatch;</span>
+<span class="tok-c1">// found   : out2.Inner</span>
+<span class="tok-c1">// required: PathDep1</span>
+<span class="tok-c1">//    (which expands to)  out1.Inner</span>
+<span class="tok-c1">//       val typeCheckFails: PathDep1 = out2in</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这里要理解的关键是"每个外部类都有自己的内部类"，所以每个内部类都是不同的类型 - 依赖于我们使用哪条路径到达内部类。</p>
+</div>
+<div class="paragraph">
+<p>这种类型是非常有用的，我们可以强制从一个具体参数中得到类型。一个使用这种类型的例子如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Parent</span> <span class="tok-o">{</span>
+  <span class="tok-k">class</span> <span class="tok-nc">Child</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">ChildrenContainer</span><span class="tok-o">(</span><span class="tok-n">p</span><span class="tok-k">:</span> <span class="tok-kt">Parent</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">ChildOfThisParent</span> <span class="tok-o">=</span> <span class="tok-n">p</span><span class="tok-o">.</span><span class="tok-nc">Child</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">add</span><span class="tok-o">(</span><span class="tok-n">c</span><span class="tok-k">:</span> <span class="tok-kt">ChildOfThisParent</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在我们在类型系统使用 path dependent type 编码了这个逻辑，即这个容器只能包含 <code>p</code> 这个父类的孩子 - 而不是"任何父类"。</p>
+</div>
+<div class="paragraph">
+<p>很快我们会在 <a href="#type-projection">Type Projections</a> 一节看到如何表达 "child of any parent"。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-projection"><a class="anchor" href="#type-projection"></a>24. Type Projection</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Type Projections 允许你引用一个内部类的类型，从这方面看，它类似于 Path Dependent Types。
+从语法来看，你可以使用 # 符号分离出内部类的路径。首先，让我们看看 Type Projections 的例子以及它们（"#" 语法）与 path dependent types（"." 语法）的区别：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 我们的示例类结构</span>
+<span class="tok-k">class</span> <span class="tok-nc">Outer</span> <span class="tok-o">{</span>
+  <span class="tok-k">class</span> <span class="tok-nc">Inner</span>
+<span class="tok-o">}</span>
+
+<span class="tok-c1">// 使用 Type Projection (和 alias) 引用 Inner</span>
+<span class="tok-k">type</span> <span class="tok-kt">OuterInnerProjection</span> <span class="tok-o">=</span> <span class="tok-nc">Outer</span><span class="tok-k">#</span><span class="tok-nc">Inner</span>
+
+<span class="tok-k">val</span> <span class="tok-n">out1</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Outer</span>
+<span class="tok-k">val</span> <span class="tok-n">out1in</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-n">out1</span><span class="tok-o">.</span><span class="tok-nc">Inner</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>关于 path dependent 和 projections 另一个很直观的印象是 Type Projections 可以用于 "type-level programming";-)</p>
+</div>
+<div class="paragraph">
+<p>回到 Path Dependent Type 的例子，如果想要表达 "child of any parent"，可以这么写：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Parent</span> <span class="tok-o">{</span>
+  <span class="tok-k">class</span> <span class="tok-nc">Child</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">class</span> <span class="tok-nc">ChildrenContainer</span> <span class="tok-o">{</span>
+  <span class="tok-k">type</span> <span class="tok-kt">ChildOfAnyParent</span> <span class="tok-o">=</span> <span class="tok-nc">Parent</span><span class="tok-k">#</span><span class="tok-nc">Child</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">add</span><span class="tok-o">(</span><span class="tok-n">c</span><span class="tok-k">:</span> <span class="tok-kt">ChildOfAnyParent</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="existential-types"><a class="anchor" href="#existential-types"></a>25. Existential Types</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Existential Types 与类型擦除密切相关，而所有 JVM 语言都必须面对类型擦除。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">val</span> <span class="tok-n">thingy</span><span class="tok-k">:</span> <span class="tok-kt">Any</span> <span class="tok-o">=</span> <span class="tok-o">???</span>
+
+<span class="tok-n">thingy</span> <span class="tok-k">match</span> <span class="tok-o">{</span>
+  <span class="tok-k">case</span> <span class="tok-n">l</span><span class="tok-k">:</span> <span class="tok-kt">List</span><span class="tok-o">[</span><span class="tok-kt">a</span><span class="tok-o">]</span> <span class="tok-k">=&gt;</span>
+     <span class="tok-c1">// 小写字母 &#39;a&#39;, 匹配所有类型... &#39;那么 &#39;a&#39; 的类型是什么呢?!</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>因为运行时类型擦除，我们不知道 <code>a</code> 的类型。
+我们只知道 List 是一个 type constructor，<code>* -&gt; *</code>，所以一定存在某些类型 <code>T</code> 可以被 List 用来构造出一个合法的 <code>List[T]</code>。
+这里的某些类型，就是 <strong>existential type</strong>！</p>
+</div>
+<div class="paragraph">
+<p>Scala 为此提供了一个缩写：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-nc">List</span><span class="tok-o">[</span><span class="tok-k">_</span><span class="tok-o">]</span>
+ <span class="tok-c1">//  表示一个未知类型，但是不知道是哪一个</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>假设你正在使用 Abstract Type Member，在我们的例子就是一些 Monad。
+我们想要用户在 Monad 中只能使用 <code>Cool</code> 实例，因为比如说，这样我们的 Monad 类型才有意义。
+我们可以使用 <strong>Existential Type T</strong> 做类型限制实现：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">type</span> <span class="tok-kt">Monad</span><span class="tok-o">[</span><span class="tok-kt">T</span><span class="tok-o">]</span> <span class="tok-k">forSome</span> <span class="tok-o">{</span> <span class="tok-k">type</span> <span class="tok-kt">T</span> <span class="tok-k">&gt;:</span> <span class="tok-kt">Cool</span> <span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>参考 <a href="http://mikeslinn.blogspot.com/2012/08/scala-existential-types.html">scala-existential-type</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="specialized-types"><a class="anchor" href="#specialized-types"></a>26. Specialized Types</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="specialized"><a class="anchor" href="#specialized"></a>26.1. @specialized</h3>
+<div class="paragraph">
+<p>比起"类型系统"，Type specialization 实际上更像是性能技巧，
+但是如果你想要写出性能良好的集合那么它是非常重要的，值得用心牢记。
+在我们的例子中，我们将实现一个非常有用的集合，叫做 <code>Parcel[A]</code>，能够保存一个指定类型的值 - 这是多么有用！</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Parcel</span><span class="tok-o">[</span><span class="tok-kt">A</span><span class="tok-o">](</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这就是我们的基本实现。那么缺点在哪里呢？因为 <code>A</code> 可以是任何类型，即使我们只放入一个 <code>Int</code>
+，它也是被表示为 Java <strong>object</strong>。所以上面的类只能处理 objects，对于原始类型需要装箱和拆箱。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">val</span> <span class="tok-n">i</span><span class="tok-k">:</span> <span class="tok-kt">Int</span> <span class="tok-o">=</span> <span class="tok-nc">Int</span><span class="tok-o">.</span><span class="tok-n">unbox</span><span class="tok-o">(</span><span class="tok-nc">Parcel</span><span class="tok-o">.</span><span class="tok-n">apply</span><span class="tok-o">(</span><span class="tok-nc">Int</span><span class="tok-o">.</span><span class="tok-n">box</span><span class="tok-o">(</span><span class="tok-mi">1</span><span class="tok-o">)))</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如我们所知道 - 不必要的装箱并不是一个好主意，因为它在运行时需要更多的工作量，来回转换 <code>int</code> 和 <code>object Int</code>。
+有什么可以解决这个问题呢？在这里能应用的一个技巧是为所有的原始类型 "<strong>specialize</strong> 我们的 Parcel 类（比如现在只需要 Long 和 Int），正如这样：</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-note" title="Note"></i>
+</td>
+<td class="content">
+如果你已经读过 <a href="#value-class">Value Class</a> 一节，你可能会注意到 <code>Parcel</code> 可以轻松使用它们来实现。
+这的确是事实。不过，Scala 从 2.8.1 就引入了 <code>specialized</code>，而在 2.10.x 才引入 Value Classes。
+而且，<strong>你可以专门化一个以上的值</strong>（尽管这会<strong>指数级地</strong>增加产生的字节码），而使用 Value Classes 你就被限制只能使用单个值。
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Parcel</span><span class="tok-o">[</span><span class="tok-kt">A</span><span class="tok-o">](</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">something</span><span class="tok-k">:</span> <span class="tok-kt">A</span> <span class="tok-o">=</span> <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+
+<span class="tok-c1">// &quot;手动&quot; specialzation</span>
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">IntParcel</span><span class="tok-o">(</span><span class="tok-n">intValue</span><span class="tok-k">:</span> <span class="tok-kt">Int</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+  <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">something</span><span class="tok-k">:</span> <span class="tok-kt">Int</span> <span class="tok-o">=</span> <span class="tok-cm">/* 基于底层 Int，没有包装！ */</span> <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">LongParcel</span><span class="tok-o">(</span><span class="tok-n">intValue</span><span class="tok-k">:</span> <span class="tok-kt">Long</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+  <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">something</span><span class="tok-k">:</span> <span class="tok-kt">Long</span> <span class="tok-o">=</span> <span class="tok-cm">/* 基于底层 Long，没有包装！ */</span> <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>IntParcel</code> 和 <code>LongParcel</code> 的实现能有效的避免装箱，因为他们直接使用原始类型，而没有触及到对象帝国。
+现在取决于我们的使用，我们必须手动选择使用哪个 <strong><code>Parcel</code></strong>。</p>
+</div>
+<div class="paragraph">
+<p>这样的实现很不错但是&#8230;如果有 <code>N</code> 个实现，包含每个我们想支持的原始类型（可以是 <code>int</code>，<code>long</code>，<code>byte</code>，<code>char</code>，<code>short</code>，<code>float</code>，<code>double</code>，<code>boolean</code>，<code>void</code> 加上 <code>Object</code> 的任意类型），那么我们需要维护很多样板代码。</p>
+</div>
+<div class="paragraph">
+<p>既然我们熟悉了 specialization 的概念，我们不需要手动实现，来看看 Scala 是如何通过引入 <code>@specialized</code> 注解帮助我们的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Parcel</span><span class="tok-o">[</span><span class="tok-kt">@specialized</span> <span class="tok-kt">A</span><span class="tok-o">](</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>因为我们给类型参数 <code>A</code> 加上了 <code>@specialized</code> 注解，
+这告诉编译器要为这个类生成所有 specialized 变体 - 即 <code>ByteParcel</code>，
+<code>IntParcel</code>，<code>LongParcel</code>，<code>FloatParcel</code>，<code>DoubleParcel</code>，
+<code>BooleanParcel</code>，<code>CharParcel</code>，甚至 <code>VoidParcel</code>（这些并不是实际实现的名字，但是你应该明白背后的想法）。
+编译器还负责选择"正确"的类型，尽可能使用 specialized 版本（如果有的话），所以我们写代码时可以不关心这个类是否是 specialized：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">val</span> <span class="tok-n">pi</span> <span class="tok-k">=</span> <span class="tok-nc">Parcel</span><span class="tok-o">(</span><span class="tok-mi">1</span><span class="tok-o">)</span>     <span class="tok-c1">// 会使用 `int` specialized 方法</span>
+<span class="tok-k">val</span> <span class="tok-n">pl</span> <span class="tok-k">=</span> <span class="tok-nc">Parcel</span><span class="tok-o">(</span><span class="tok-mi">1L</span><span class="tok-o">)</span>    <span class="tok-c1">// 会使用 `long` specialized 方法</span>
+<span class="tok-k">val</span> <span class="tok-n">pb</span> <span class="tok-k">=</span> <span class="tok-nc">Parcel</span><span class="tok-o">(</span><span class="tok-kc">false</span><span class="tok-o">)</span> <span class="tok-c1">// 会使用 `boolean` specialized 方法</span>
+<span class="tok-k">val</span> <span class="tok-n">po</span> <span class="tok-k">=</span> <span class="tok-nc">Parcel</span><span class="tok-o">(</span><span class="tok-s">&quot;pi&quot;</span><span class="tok-o">)</span>  <span class="tok-c1">// 会使用 `Object` 方法</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>"<em>太棒了，我们可以在任意的地方使用！</em>"&#8201;&#8212;&#8201;这是人们发现 specialiation 的常见反应，因为它可以数倍加快低级别操作速度，同时降低内存使用率。
+不幸的是，<strong>我们需要很高的代价</strong>：如果对多个参数使用该注解，那么生成的代码就会变得非常庞大：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Thing</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">B</span><span class="tok-o">](</span><span class="tok-nd">@specialized</span> <span class="tok-n">a</span><span class="tok-k">:</span> <span class="tok-kt">A</span><span class="tok-o">,</span> <span class="tok-nd">@specialized</span> <span class="tok-n">b</span><span class="tok-k">:</span> <span class="tok-kt">B</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在上面的例子中，我们使用了 specialization 的第二种应用方式 - 将注解加在参数前 - 效果等价于我们直接 specialize <code>A</code> 和 <code>B</code>。
+请注意到上面的代码会产生 <code>8 * 8 = 64</code> 种实现，这是因为编译器要处理 "A 是一个 <code>int</code>，B 是一个 <code>int</code>" 以及 "A 是一个 <code>boolean</code>，但是 B 是一个 <code>long</code>" 这些情况 - 你应该明白编译器做了什么。
+事实上，最终生成的类的数量大约在 <code>2 * 10^(nr_of_type_specializations)</code>，对于三个类型参数，很容易就产生了上千个类。</p>
+</div>
+<div class="paragraph">
+<p>当然有办法限制这种指数增长，比如限制需要 specialization 的目标类型。
+比如说我们的 Parcel 多数情况都用于整数类型，从不用于浮点数 - 我们可以告诉编译器只为我们生成 Long 和 Int 类型的：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">case</span> <span class="tok-k">class</span> <span class="tok-nc">Parcel</span><span class="tok-o">[</span><span class="tok-kt">@specialized</span><span class="tok-o">(</span><span class="tok-kt">Int</span>, <span class="tok-kt">Long</span><span class="tok-o">)</span> <span class="tok-kt">A</span><span class="tok-o">](</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">A</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>让我们使用 <code>:javap Parcel</code> 看看生成的字节码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="java language-java"><span class="tok-c1">// Parcel, 为 Int 和 Long 专门化</span>
+<span class="tok-kd">public</span> <span class="tok-kd">class</span> <span class="tok-nc">Parcel</span> <span class="tok-kd">extends</span> <span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-na">lang</span><span class="tok-o">.</span><span class="tok-na">Object</span> <span class="tok-kd">implements</span> <span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Product</span><span class="tok-o">,</span><span class="tok-n">scala</span><span class="tok-o">.</span><span class="tok-na">Serializable</span><span class="tok-o">{</span>
+    <span class="tok-kd">public</span> <span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-na">lang</span><span class="tok-o">.</span><span class="tok-na">Object</span> <span class="tok-nf">value</span><span class="tok-o">();</span> <span class="tok-c1">// 泛型版本, &quot;处理其他所有情况&quot;</span>
+    <span class="tok-kd">public</span> <span class="tok-kt">int</span> <span class="tok-n">value$mcI$sp</span><span class="tok-o">();</span>       <span class="tok-c1">// int specialized 版本</span>
+    <span class="tok-kd">public</span> <span class="tok-kt">long</span> <span class="tok-n">value$mcJ$sp</span><span class="tok-o">();}</span>     <span class="tok-c1">// long specialized 版本</span>
+
+    <span class="tok-kd">public</span> <span class="tok-kt">boolean</span> <span class="tok-n">specInstance$</span><span class="tok-o">();</span>  <span class="tok-c1">// 检查我们是否在使用 specialized 类的实现</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如你所看到的，编译器为我们准备了额外的 specialized 方法，
+比如 <code>value$mcI$sp()</code> 返回一个 <code>int</code>，<code>value$mcJ$sp()</code> 返回一个 <code>long</code>。
+另一个值得提起的方法是 <code>specInstance$</code>，如果使用的是 specialized 类，那么该方法返回 <code>true</code>。</p>
+</div>
+<div class="paragraph">
+<p>如果你好奇的话，当前这些类在 Scala 中会被 specialized（这个列表可能不完整）：Function0，Function1，Function2，Tuple1，Tuple2，Product1，Product2，AbstractFunction0，AbstractFunction1，AbstractFunction2。
+尽管可以 specialized 两个以上的参数，但是由于开销太大，人们通常不这么做。</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+我们要避免装箱的一个主要原因还包含内存效率。想象一个 <code>boolean</code>，
+如果能在内存中使用一个 bit 存储它该多好呀。
+悲伤的是这并不是事实（我所知道的任何 JVM），比如说在 HotSpot 中，一个 <code>boolean</code> 是用 <code>int</code> 表示的，那么它需要占据 4 个字节的空间。
+另一个方面，它的表兄弟 <code>java.lang.Boolean</code> 需要 <strong>8 个字节存储对象头</strong>，正如每个 Java 对象都需要，在内部存储 <code>boolean</code>（需要额外 4 字节），
+然后由于 Java <strong>对象布局对齐规则（Object Layout Alignment Rules）</strong>，这个对象所占据的空间会被对齐到 16 个字节（8 个字节存储对象头，4 个字节存储值，4 个字节对齐）。
+这就是为什么我们非常想避免装箱的另一个原因。
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="miniboxing-span-style-color-red-span"><a class="anchor" href="#miniboxing-span-style-color-red-span"></a>26.2. Miniboxing <span style="color:red">&#x2717;</span></h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+Miniboxing 不是 Scala 的一个特征，但是可以作为<strong>编译器插件</strong>与 scalac 一起使用。
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>我们在前一节解释到 specialization 是非常强大的，但同时也是"编译器炸弹"，存在指数增长的可能性。
+现在已经有一个解决办法了，那就是 Mibiboxing。Miniboxing 是一个编译器插件，能够实现与 <code>@specialized</code> 相同的功能，但不会生成上千个类。</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+TODO EPFL 有一个项目可以使得 specialiation 更高效 <a href="http://scala-miniboxing.org">Scala Miniboxing</a>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="type-lambda-span-style-color-red-span"><a class="anchor" href="#type-lambda-span-style-color-red-span"></a>27. Type Lambda <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>在 type lambda 中我们会用到 <strong>Path Dependent</strong> 和 <strong>Structural Types</strong>，所以如果你跳过了这些章节，你可能需要回去回顾下。</p>
+</div>
+<div class="paragraph">
+<p>了解 Type Lambdas 之前，让我们回头看看函数和柯里化。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">EitherMonad</span><span class="tok-o">[</span><span class="tok-kt">A</span><span class="tok-o">]</span> <span class="tok-nc">extends</span> <span class="tok-nc">Monad</span><span class="tok-o">[({</span><span class="tok-k">type</span> <span class="tok-kt">Î</span><span class="tok-err">»</span><span class="tok-o">[</span><span class="tok-kt">Î±</span><span class="tok-o">]</span> <span class="tok-kt">=</span> <span class="tok-kt">Either</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">Î±</span><span class="tok-o">]})</span><span class="tok-k">#</span><span class="tok-kt">Î</span><span class="tok-err">»</span><span class="tok-o">]</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">point</span><span class="tok-o">[</span><span class="tok-kt">B</span><span class="tok-o">](</span><span class="tok-n">b</span><span class="tok-k">:</span> <span class="tok-kt">B</span><span class="tok-o">)</span><span class="tok-k">:</span> <span class="tok-kt">Either</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">B</span><span class="tok-o">]</span>
+  <span class="tok-k">def</span> <span class="tok-n">bind</span><span class="tok-o">[</span><span class="tok-kt">B</span>, <span class="tok-kt">C</span><span class="tok-o">](</span><span class="tok-n">m</span><span class="tok-k">:</span> <span class="tok-kt">Either</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">B</span><span class="tok-o">])(</span><span class="tok-n">f</span><span class="tok-k">:</span> <span class="tok-kt">B</span> <span class="tok-o">=&gt;</span> <span class="tok-nc">Either</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">C</span><span class="tok-o">])</span><span class="tok-k">:</span> <span class="tok-kt">Either</span><span class="tok-o">[</span><span class="tok-kt">A</span>, <span class="tok-kt">C</span><span class="tok-o">]</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="union-type-span-style-color-red-span"><a class="anchor" href="#union-type-span-style-color-red-span"></a>28. Union Type <span style="color:red">&#x2717;</span></h2>
+<div class="sectionbody">
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+这部分还不完整，请参考 Miles' 博客了解详细细节（下面有链接）:-)
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>在我们开始讨论这个类型之前需要回忆起集合论，然后从"交集类型"看待已经熟悉的构造 <code>A with B</code>：</p>
+</div>
+<div class="paragraph">
+<p>为什么呢？这是因为唯一满足这样的类型限制的是那些有 <code>type A</code> 和 <code>type B</code> 的类型，那么在集合论中，这就是个交集。
+另一方面，让我们思考什么是 Union Type。</p>
+</div>
+<div class="paragraph">
+<p>Union Type 应该是两个集合的联合（union），使用集合表示应该是 <code>type A</code> <strong>或</strong> <code>type B</code>。
+我们的任务是使用 Scala 的类型系统介绍这样的类型。虽然 Union Type 并不是 Scala 的 first-class 构件（它不是内置），我们可以很容易的实现它们。</p>
+</div>
+<div class="paragraph">
+<p>如果你想要深入了解 Union Type，<strong>Miles Sabin</strong> 在 <a href="http://www.chuusai.com/2011/06/09/scala-union-types-curry-howard/">the blog post <em>Unboxed union types in Scala via the Curry-Howard isomorphism</em></a> 中详细解释了这个技巧。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">type</span> <span class="tok-kt">|∨|</span><span class="tok-o">[</span><span class="tok-kt">T</span>, <span class="tok-kt">U</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-o">{</span> <span class="tok-k">type</span> <span class="tok-kt">λ</span><span class="tok-o">[</span><span class="tok-kt">X</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-o">¬¬[</span><span class="tok-kt">X</span><span class="tok-o">]</span> <span class="tok-o">&lt;:&lt;</span> <span class="tok-o">(</span><span class="tok-n">T</span> <span class="tok-o">∨</span> <span class="tok-n">U</span><span class="tok-o">)</span> <span class="tok-o">}</span>
+
+<span class="tok-k">def</span> <span class="tok-n">size</span><span class="tok-o">[</span><span class="tok-kt">T</span> <span class="tok-kt">:</span> <span class="tok-o">(</span><span class="tok-kt">Int</span> <span class="tok-kt">|∨|</span> <span class="tok-kt">String</span><span class="tok-o">)</span><span class="tok-k">#</span><span class="tok-kt">λ</span><span class="tok-o">](</span><span class="tok-n">t</span> <span class="tok-k">:</span> <span class="tok-kt">T</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-n">t</span> <span class="tok-k">match</span> <span class="tok-o">{</span>
+    <span class="tok-k">case</span> <span class="tok-n">i</span> <span class="tok-k">:</span> <span class="tok-kt">Int</span> <span class="tok-o">=&gt;</span> <span class="tok-n">i</span>
+    <span class="tok-k">case</span> <span class="tok-n">s</span> <span class="tok-k">:</span> <span class="tok-kt">String</span> <span class="tok-o">=&gt;</span> <span class="tok-n">s</span><span class="tok-o">.</span><span class="tok-n">length</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="delayed-init"><a class="anchor" href="#delayed-init"></a>29. Delayed Init</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>因为我们开始讨论 Scala 中"奇怪"的类型，那么我们需要为延迟初始（Delayed Init）开一节。</p>
+</div>
+<div class="paragraph">
+<p><code>DelayedInit</code> 实际上是一个"<em>编译器技巧</em>"，对于类型系统没有太大影响，但是一旦你理解了它，
+你就知道了 <code>scala.App</code> 是如何工作的，所以让我们深入到 <code>App</code> 的例子中：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">Main</span> <span class="tok-k">extends</span> <span class="tok-nc">App</span> <span class="tok-o">{</span>
+  <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;Hello world!&quot;</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>通过阅读上面的代码，基于我们基本的 Scala 知识，我们可能会认为"<em>好了, 现在 <code>println</code> 实际上是 Main 的构造方法！</em>"。
+通常情况下这是没错的，但<strong>这次不是</strong>，这是因为  <code>App</code> 特质继承了 <code>DelayedInit</code> 特质</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">App</span> <span class="tok-k">extends</span> <span class="tok-nc">DelayedInit</span> <span class="tok-o">{</span>
+  <span class="tok-c1">// code here ...</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>让我们看看特质 <code>DelayedInit</code> 的完整版源代码：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">DelayedInit</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">delayedInit</span><span class="tok-o">(</span><span class="tok-n">x</span><span class="tok-k">:</span> <span class="tok-o">=&gt;</span> <span class="tok-nc">Unit</span><span class="tok-o">)</span><span class="tok-k">:</span> <span class="tok-kt">Unit</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>正如你看到的，DelayedInit 不包含任何实现 - 与它相关的所有工作都由编译器完成，编译器会将所有继承 <code>DelayedInit</code> 的类和对象特殊处理（注意，特质<em>不会</em>像这样被重写）。这样特殊的处理方式如下：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>想象你的类/对象身体是一个函数，所有的事情都是在这些类/对象体内完成</p>
+</li>
+<li>
+<p>编译器会为你创建这个函数，然后传递给 <code>delayedInit(x: =&gt; Unit)</code> 方法（注意参数是 <em>call-by-name</em>）。</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>让我们快速给一个例子，然后我们将手动实现 App 为我们做的工作（在 <code>delayedInit</code> 的帮助下）</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 我们写：</span>
+<span class="tok-k">object</span> <span class="tok-nc">Main</span> <span class="tok-k">extends</span> <span class="tok-nc">DelayedInit</span> <span class="tok-o">{</span>
+  <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;hello!&quot;</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+
+<span class="tok-c1">// 编译器产生：</span>
+<span class="tok-k">object</span> <span class="tok-nc">Main</span> <span class="tok-k">extends</span> <span class="tok-nc">DelayedInit</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">delayedInit</span><span class="tok-o">(</span><span class="tok-n">x</span><span class="tok-k">:</span> <span class="tok-o">=&gt;</span> <span class="tok-nc">Unit</span> <span class="tok-k">=</span> <span class="tok-o">{</span> <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;Hello!&quot;</span><span class="tok-o">)</span> <span class="tok-o">})</span> <span class="tok-k">=</span> <span class="tok-c1">// 需要我们自己填充实现</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用这样的机制你可以在任意时候运行类的 body。现在我们知道了 <code>delayedInit</code> 是如何工作的，让我们实现我们自己的 <code>scala.App</code>（使用与 <code>scala.App</code> 同样的机制）</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">trait</span> <span class="tok-nc">SimpleApp</span> <span class="tok-k">extends</span> <span class="tok-nc">DelayedInit</span> <span class="tok-o">{</span>
+
+  <span class="tok-k">private</span> <span class="tok-k">val</span> <span class="tok-n">initCode</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">ListBuffer</span><span class="tok-o">[()</span> <span class="tok-k">=&gt;</span> <span class="tok-kt">Unit</span><span class="tok-o">]</span>
+
+  <span class="tok-k">override</span> <span class="tok-k">def</span> <span class="tok-n">delayedInit</span><span class="tok-o">(</span><span class="tok-n">body</span><span class="tok-k">:</span> <span class="tok-o">=&gt;</span> <span class="tok-nc">Unit</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+    <span class="tok-n">initCode</span> <span class="tok-o">+=</span> <span class="tok-o">(()</span> <span class="tok-k">=&gt;</span> <span class="tok-n">body</span><span class="tok-o">)</span>
+  <span class="tok-o">}</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">main</span><span class="tok-o">(</span><span class="tok-n">args</span><span class="tok-k">:</span> <span class="tok-kt">Array</span><span class="tok-o">[</span><span class="tok-kt">String</span><span class="tok-o">])</span> <span class="tok-k">=</span> <span class="tok-o">{</span>
+    <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;Whoa, I&#39;m a SimpleApp!&quot;</span><span class="tok-o">)</span>
+
+    <span class="tok-k">for</span> <span class="tok-o">(</span><span class="tok-n">proc</span> <span class="tok-k">&lt;-</span> <span class="tok-n">initCode</span><span class="tok-o">)</span> <span class="tok-n">proc</span><span class="tok-o">()</span>
+
+    <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;So long and thanks for all the fish!&quot;</span><span class="tok-o">)</span>
+  <span class="tok-o">}</span>
+<span class="tok-o">}</span>
+
+                                <span class="tok-c1">// 运行下面的类会打印出：</span>
+<span class="tok-k">object</span> <span class="tok-nc">Test</span> <span class="tok-k">extends</span> <span class="tok-nc">SimpleApp</span> <span class="tok-o">{</span> <span class="tok-c1">//</span>
+                                <span class="tok-c1">// Whoa, I&#39;m a SimpleApp!</span>
+  <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-s">&quot;  Hello World!&quot;</span><span class="tok-o">)</span>     <span class="tok-c1">//   Hello World!</span>
+                                <span class="tok-c1">// So long and thanks for all the fish!</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这就是 <code>DelayedInit</code> 的工作方式。因为特质<em>不会</em>被重写，我们继承 DealyedInit 的 <code>SimpleApp</code> 不会被修改，多亏了这点，我们可以利用 delayedInit 方法，积累我们遇见过的 "class bodies"
+（可以想象成我们正在处理一个深层次的类，然后 <code>delayedInit</code> 会被多次调用），最后像 Java 那样实现 <code>main</code> 方法依次调用 "class bodies"。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="dynamic-type"><a class="anchor" href="#dynamic-type"></a>30. Dynamic Type</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>我曾经犹豫是否应该将 Dynamic Type 加入到这篇文章。最后，我决定还是加吧，因为这样的话可以使得这篇描述类型的文章更完整。那么问题是，为什么我会这么犹豫呢？</p>
+</div>
+<div class="paragraph">
+<p><strong>Scala 允许我们在一个 Staticly/Strictly Typed 语言中有 <strong>Dynamic Types</strong>！</strong>这就是为什么我考虑跳过，并想在其它位置描述它 - 因为它基本是在 "hacking around" 你所看过的类型。
+让我们在看看实际例子，以及它是如何融入到 Scala 类型生态系统中的。</p>
+</div>
+<div class="paragraph">
+<p>想象一个包含任意 JSON 数据 <code>JsonObject</code> 类。现在我们定义方法匹配这个 JSON 对象的键值，返回一个 <code>Option[JValue]</code>，其中一个 JValue 可以是另一个 <code>JObject</code>，<code>JArray</code>，<code>JString</code> 或者 <code>JNumber</code>。
+用法类似于下面的例子。</p>
+</div>
+<div class="paragraph">
+<p><strong>但是在这之前，要记得在文件（或者 REPL）导入开启这个语言特征</strong>。有不少特征（比如实验性质的宏）需要在文件中显式导入才能开启。
+如果你想要了解更多有关这些特征，可以看看 <a href="http://www.scala-lang.org/api/current/scala/language$.html">scala.language</a> 对象或者读一读文档 Scala Improvement Process 18 <a href="http://docs.scala-lang.org/sips/modularizing-language-features.html">SIP-18</a></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// 记住，我们需要导入才能开启这个语言特征</span>
+<span class="tok-k">import</span> <span class="tok-nn">scala.language.dynamics</span>
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// TODO: 缺少实现</span>
+<span class="tok-k">class</span> <span class="tok-nc">Json</span><span class="tok-o">(</span><span class="tok-n">s</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">Dynamic</span> <span class="tok-o">{</span>
+  <span class="tok-o">???</span>
+<span class="tok-o">}</span>
+
+<span class="tok-k">val</span> <span class="tok-n">jsonString</span> <span class="tok-k">=</span> <span class="tok-s">&quot;&quot;&quot;</span>
+<span class="tok-s">  {</span>
+<span class="tok-s">    &quot;name&quot;: &quot;Konrad&quot;,</span>
+<span class="tok-s">    &quot;favLangs&quot;: [&quot;Scala&quot;, &quot;Go&quot;, &quot;SML&quot;]</span>
+<span class="tok-s">  }</span>
+<span class="tok-s">&quot;&quot;&quot;</span>
+
+<span class="tok-k">val</span> <span class="tok-n">json</span> <span class="tok-k">=</span> <span class="tok-k">new</span> <span class="tok-nc">Json</span><span class="tok-o">(</span><span class="tok-n">jsonString</span><span class="tok-o">)</span>
+
+<span class="tok-k">val</span> <span class="tok-n">name</span><span class="tok-k">:</span> <span class="tok-kt">Option</span><span class="tok-o">[</span><span class="tok-kt">String</span><span class="tok-o">]</span> <span class="tok-k">=</span> <span class="tok-n">json</span><span class="tok-o">.</span><span class="tok-n">name</span>
+<span class="tok-c1">// （一旦我们加入了实现）上述代码就可以通过编译</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>那么&#8230; 我们是如何在静态语言中融入动态类型的呢？答案很简单 - 编译器重写和一个<strong>特殊的标记特质</strong>：<code>scala.Dynamic</code>。</p>
+</div>
+<div class="paragraph">
+<p>好了，结束胡言乱语然后回到基础。那么&#8230;我们怎么使用这些动态类型呢？事实上，我们需要实现几个<strong>魔术</strong>方法：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>applyDynamic</strong></p>
+</li>
+<li>
+<p><strong>applyDynamicNamed</strong></p>
+</li>
+<li>
+<p><strong>selectDynamic</strong></p>
+</li>
+<li>
+<p><strong>updateDynamic</strong></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>让我们依次通过例子了解它们。</p>
+</div>
+<div class="sect2">
+<h3 id="applydynamic"><a class="anchor" href="#applydynamic"></a>30.1. applyDynamic</h3>
+<div class="paragraph">
+<p>好了，我们的第一个魔术方法看起来像：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// applyDynamic 例子</span>
+<span class="tok-k">object</span> <span class="tok-nc">OhMy</span> <span class="tok-k">extends</span> <span class="tok-nc">Dynamic</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">applyDynamic</span><span class="tok-o">(</span><span class="tok-n">methodName</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)(</span><span class="tok-n">args</span><span class="tok-k">:</span> <span class="tok-kt">Any*</span><span class="tok-o">)</span> <span class="tok-o">{</span>
+    <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-n">s</span><span class="tok-s">&quot;&quot;&quot;|  methodName: $methodName,</span>
+<span class="tok-s">                |args: ${args.mkString(&quot;,&quot;)}&quot;&quot;&quot;</span><span class="tok-o">.</span><span class="tok-n">stripMargin</span><span class="tok-o">)</span>
+  <span class="tok-o">}</span>
+<span class="tok-o">}</span>
+
+<span class="tok-nc">OhMy</span><span class="tok-o">.</span><span class="tok-n">dynamicMethod</span><span class="tok-o">(</span><span class="tok-s">&quot;with&quot;</span><span class="tok-o">,</span> <span class="tok-s">&quot;some&quot;</span><span class="tok-o">,</span> <span class="tok-mi">1337</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><strong>applyDynamic</strong> 的签名接受方法名字和方法参数。在这里我们依次访问它们，构造出一个字符串。我们的实现仅打印出我们所关心的方法调用。
+比如该方法是否真的得到了我们希望的参数值/方法名字？方法输出将会是：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-n">methodName</span><span class="tok-k">:</span> <span class="tok-kt">dynamicMethod</span><span class="tok-o">,</span>
+  <span class="tok-n">args</span><span class="tok-k">:</span> <span class="tok-kt">with</span><span class="tok-o">,</span><span class="tok-n">some</span><span class="tok-o">,</span><span class="tok-mi">1337</span>
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="applydynamicnamed"><a class="anchor" href="#applydynamicnamed"></a>30.2. applyDynamicNamed</h3>
+<div class="paragraph">
+<p>好了，刚才的例子很简单。但是 applyDynamic 不能让我们控制参数的名字。如果我们能过写 <code>JSON.node(nickname = "ktoso")</code> 该多好呀？Hmm&#8230;事实是我们确实可以！</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-c1">// applyDynamicNamed 例子</span>
+<span class="tok-k">object</span> <span class="tok-nc">JSON</span> <span class="tok-k">extends</span> <span class="tok-nc">Dynamic</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">applyDynamicNamed</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)(</span><span class="tok-n">args</span><span class="tok-k">:</span> <span class="tok-o">(</span><span class="tok-kt">String</span><span class="tok-o">,</span> <span class="tok-kt">Any</span><span class="tok-o">)*)</span> <span class="tok-o">{</span>
+    <span class="tok-n">println</span><span class="tok-o">(</span><span class="tok-n">s</span><span class="tok-s">&quot;&quot;&quot;Creating a $name, for:\n &quot;${args.head._1}&quot;: &quot;${args.head._2}&quot; &quot;&quot;&quot;</span><span class="tok-o">)</span>
+  <span class="tok-o">}</span>
+<span class="tok-o">}</span>
+
+<span class="tok-nc">JSON</span><span class="tok-o">.</span><span class="tok-n">node</span><span class="tok-o">(</span><span class="tok-n">nickname</span> <span class="tok-k">=</span> <span class="tok-s">&quot;ktoso&quot;</span><span class="tok-o">)</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这一次我们不仅得到一串参数值的列表，还得到了参数的名字。多亏了这个，这次例子的输出是：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-nc">Creating</span> <span class="tok-n">a</span> <span class="tok-n">node</span><span class="tok-o">,</span> <span class="tok-k">for:</span>
+<span class="tok-err">&quot;</span><span class="tok-kt">nickname</span><span class="tok-err">&quot;</span><span class="tok-kt">:</span> <span class="tok-err">&quot;</span><span class="tok-kt">ktoso</span><span class="tok-err">&quot;</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>现在我可以想象基于 <code>applyDynamicNamed</code> 可以构建出一些很漂亮的 <strong>DSLs</strong>！</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="selectdynamic"><a class="anchor" href="#selectdynamic"></a>30.3. selectDynamic</h3>
+<div class="paragraph">
+<p>现在，是时候看看一些更加"不寻常"的方法了。我们很容易理解 apply 方法。它们只是些拥有任意名字的方法。但是，是不是 Scala 中所有动态类型都需要定义成方法 - 或者说我们可不可以在对象中定义一个类似于字段的方法？
+让我们尝试一下！<strong>这里的例子使用 applyDynamic，然后尝试表现出我们定义了一个没有 () 的方法</strong>：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-nc">OhMy</span><span class="tok-o">.</span><span class="tok-n">name</span> <span class="tok-c1">// 编译错误</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>为什么用 <strong>applyDynamic</strong> 不行呢？我猜你已经知道原因了。这些方法（没有 ()）会被<strong>特殊</strong>处理，因为它们通常代表字段。这样的调用不会触发 <code>applyDynamic</code>。</p>
+</div>
+<div class="paragraph">
+<p>让我们看看我们的第一个 <code>selectDynamic</code> 调用：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">class</span> <span class="tok-nc">Json</span><span class="tok-o">(</span><span class="tok-n">s</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)</span> <span class="tok-k">extends</span> <span class="tok-nc">Dynamic</span> <span class="tok-o">{</span>
+  <span class="tok-k">def</span> <span class="tok-n">selectDynamic</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)</span><span class="tok-k">:</span> <span class="tok-kt">Option</span><span class="tok-o">[</span><span class="tok-kt">String</span><span class="tok-o">]</span> <span class="tok-k">=</span>
+    <span class="tok-n">parse</span><span class="tok-o">(</span><span class="tok-n">s</span><span class="tok-o">).</span><span class="tok-n">get</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>这次，当我们执行 <code>HasStuff.bananas</code>，我们会得到 "I have bananas!"。注意到我们返回了值而不是将它打印出来。这是因为这次方法调用要表现的像一个字段一样。
+而且这里描述的其他方法中也可以返回值（可以是任意类型）（<strong>applyDynamic</strong> 可以返回出一个字符串而不是打印出来）</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="updatedynamic"><a class="anchor" href="#updatedynamic"></a>30.4. updateDynamic</h3>
+<div class="paragraph">
+<p>你会问还剩下什么呢？那么你可以问问你自己：既然我可以像 <code>Dynamic</code> 对象一样为某些字段定义了某些值&#8230;那么我还能用它来做什么呢？
+我的回答是："设置字段的值"。这就是 <code>updateDynamic</code> 的作用。但是 <code>updateDynamic</code> 有一条特殊的规则 - 只有你实现了 selectDynamic，它才有用。
+如果我们只实现了 updateDynamic，我们会得到 selectDynamic 没有实现的错误，无法通过编译。
+如果你仔细思考，你会发现从语义来说这很合理。</p>
+</div>
+<div class="paragraph">
+<p>当我们完成了这个例子后，实际上我们可以让上一个（错误）代码片段正确工作。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-k">object</span> <span class="tok-nc">MagicBox</span> <span class="tok-k">extends</span> <span class="tok-nc">Dynamic</span> <span class="tok-o">{</span>
+  <span class="tok-k">private</span> <span class="tok-k">var</span> <span class="tok-n">box</span> <span class="tok-k">=</span> <span class="tok-n">mutable</span><span class="tok-o">.</span><span class="tok-nc">Map</span><span class="tok-o">[</span><span class="tok-kt">String</span>, <span class="tok-kt">Any</span><span class="tok-o">]()</span>
+
+  <span class="tok-k">def</span> <span class="tok-n">updateDynamic</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)(</span><span class="tok-n">value</span><span class="tok-k">:</span> <span class="tok-kt">Any</span><span class="tok-o">)</span> <span class="tok-o">{</span> <span class="tok-n">box</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-n">value</span> <span class="tok-o">}</span>
+  <span class="tok-k">def</span> <span class="tok-n">selectDynamic</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-k">:</span> <span class="tok-kt">String</span><span class="tok-o">)</span> <span class="tok-k">=</span> <span class="tok-n">box</span><span class="tok-o">(</span><span class="tok-n">name</span><span class="tok-o">)</span>
+<span class="tok-o">}</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用这个 <code>Dynamic</code> "<strong>MagicBox</strong>"，我们可以将值存放在任意的"字段"（它们看起来确实很像字段，但实际上并不是;-)）。一个运行例子如下：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code class="scala language-scala"><span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-nc">MagicBox</span><span class="tok-o">.</span><span class="tok-n">banana</span> <span class="tok-k">=</span> <span class="tok-s">&quot;banana&quot;</span>
+<span class="tok-nc">MagicBox</span><span class="tok-o">.</span><span class="tok-n">banana</span><span class="tok-k">:</span> <span class="tok-kt">Any</span> <span class="tok-o">=</span> <span class="tok-n">banana</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-nc">MagicBox</span><span class="tok-o">.</span><span class="tok-n">banana</span>
+<span class="tok-n">res7</span><span class="tok-k">:</span> <span class="tok-kt">Any</span> <span class="tok-o">=</span> <span class="tok-n">banana</span>
+
+<span class="tok-n">scala</span><span class="tok-o">&gt;</span> <span class="tok-nc">MagicBox</span><span class="tok-o">.</span><span class="tok-n">unknown</span>
+<span class="tok-n">java</span><span class="tok-o">.</span><span class="tok-n">util</span><span class="tok-o">.</span><span class="tok-nc">NoSuchElementException</span><span class="tok-k">:</span> <span class="tok-kt">key</span> <span class="tok-kt">not</span> <span class="tok-kt">found:</span> <span class="tok-kt">unknown</span>
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>另外&#8230;你是否感兴趣 Dynamic（https://github.com/scala/scala/blob/2.13.x/src/library/scala/Dynamic.scala[源代码见此]）是如何实现的？有趣的是 <code>Dynamic</code> 特质本身没有做任何事情 - 它是"空的"，仅仅是个标记接口。
+显然，这里所有重活（<strong>调用方重写(call-site-rewriting)</strong>）都由编译器完成。</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="bibliography-and-kudos"><a class="anchor" href="#bibliography-and-kudos"></a>31. Bibliography and Kudos</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="reference-and-further-reading"><a class="anchor" href="#reference-and-further-reading"></a>31.1. Reference and further reading</h3>
+<div class="paragraph">
+<p>当然这篇文章要求相当多的研究和仔细检查，这里是所有我发现有用的链接（你可能也会）：</p>
+</div>
+<div class="ulist bibliography">
+<ul class="bibliography">
+<li>
+<p><a id="scala-spec"></a>[scala-spec] The <a href="http://www.scala-lang.org/docu/files/ScalaReference.pdf">Scala Language Specification</a></p>
+</li>
+<li>
+<p><a id="enumeration-docs"></a>[enumeration-docs] <a href="http://www.scala-lang.org/api/current/index.html#scala.Enumeration">http://www.scala-lang.org/api/current/index.html#scala.Enumeration</a></p>
+</li>
+<li>
+<p><a id="enum-sip"></a>[enum-sip] <a href="https://docs.google.com/document/d/1mIKml4sJzezL_-iDJMmcAKmavHb9axjYJos_7UMlWJ8/edit">https://docs.google.com/document/d/1mIKml4sJzezL_-iDJMmcAKmavHb9axjYJos_7UMlWJ8/edit</a></p>
+</li>
+<li>
+<p><a id="twitter-scala-school"></a>[twitter-scala-school] Twitter 的 Scala School: <a href="http://twitter.github.io/scala_school">http://twitter.github.io/scala_school</a> 包含了许多 Scala 概念，帮助我很好的解释了 Variance（是我发现过最好的解释）。</p>
+</li>
+<li>
+<p><a id="universal-types"></a>[universal-types] 非常老，但还是 Universal Types 的有效解释: <a href="http://www.scala-lang.org/old/node/128">http://www.scala-lang.org/old/node/128</a></p>
+</li>
+<li>
+<p><a id="maciver-existentials"></a>[maciver-existentials] D.R. MacIver 的 Existential Types: <a href="http://www.drmaciver.com/2008/03/existential-types-in-scala/">http://www.drmaciver.com/2008/03/existential-types-in-scala/</a></p>
+</li>
+<li>
+<p><a id="scala-doc"></a>[scala-doc] Scala API 文档: <a href="http://www.scala-lang.org/api/current/index.html">http://www.scala-lang.org/api/current/index.html</a></p>
+</li>
+<li>
+<p><a id="dragos-specialized"></a>[dragos-specialized] Dragos 的演讲，非常好的介绍了 Scala 2.8 的 <code>@specialized</code>： <a href="http://days2010.scala-lang.org/node/138/151/15-7-E%20-%20Specialization%20-%20Dragos.pdf">Scala Days 2010 - Specialization</a></p>
+</li>
+<li>
+<p><a id="wiki-diamond"></a>[wiki-diamond] <a href="http://en.wikipedia.org/wiki/Diamond_problem#The_diamond_problem">Wikipedia 上的菱形问题</a></p>
+</li>
+<li>
+<p><a id="generics-specialization"></a>[generics-specialization] <strong>Martin Odersky</strong>' 和 <strong>Iulian Dragos</strong>' 关于 specialization 的白皮书 <a href="http://infoscience.epfl.ch/record/150134">Compiling generics through user-directed type specialization</a></p>
+</li>
+<li>
+<p><a id="dangers-of-subtype-polymorphism"></a>[dangers-of-subtype-polymorphism] <a href="http://blog.jooq.org/2013/06/28/the-dangers-of-correlating-subtype-polymorphism-with-generic-polymorphism/">The dangers of correlating subtype polymorphism with generic polymorphism</a></p>
+</li>
+<li>
+<p><a id="safar-linearization"></a>[safar-linearization] Safari 上关于 Type Linearization 的在线书籍: <a href="http://blog.safaribooksonline.com/2013/05/30/traits-how-scala-tames-multiple-inheritance/">http://blog.safaribooksonline.com/2013/05/30/traits-how-scala-tames-multiple-inheritance/</a></p>
+</li>
+<li>
+<p><a id="phantom-types-haskell"></a>[phantom-types-haskell] <strong>James Iry</strong> 和他的 <a href="http://james-iry.blogspot.co.uk/2010/10/phantom-types-in-haskell-and-scala.html">Phantom Types in Haskell and Scala</a> 博客</p>
+</li>
+<li>
+<p><a id="typesafe-builder"></a>[typesafe-builder] Scala 社区中有关 Phantom Types 的最早一篇博客（我认为），作者是 <strong>Rafael Ferreira</strong> <a href="http://blog.rafaelferreira.net/2008/07/type-safe-builder-pattern-in-scala.html">Type Safe Builder Pattern in Scala</a></p>
+</li>
+<li>
+<p><a id="kriss-type-lambda"></a>[kriss-type-lambda] StackOverflow 上关于 Type Lambdas 很棒的答案，作者是 <strong>Kriss Nuttycombe</strong>： <a href="http://stackoverflow.com/questions/8736164/what-are-type-lambdas-in-scala-and-what-are-their-benefits">http://stackoverflow.com/questions/8736164/what-are-type-lambdas-in-scala-and-what-are-their-benefits</a></p>
+</li>
+<li>
+<p><a id="rogue-phantom-types"></a>[rogue-phantom-types] <strong>Jason Liszka</strong> 在 Foursquare 的博客中介绍了他们的 Rogue 库使用 Phantom Types <a href="http://engineering.foursquare.com/2011/01/31/going-rogue-part-2-phantom-types/">Going Rogue part 2 - phantom types</a></p>
+</li>
+<li>
+<p><a id="kind-pull-req"></a>[kind-pull-req] <strong>Adriaan Moors</strong> 向 <code>scala</code> 提交的 :kind pull request <a href="https://github.com/scala/scala/pull/2340">https://github.com/scala/scala/pull/2340</a></p>
+</li>
+<li>
+<p><a id="patronus-type"></a>[patronus-type] Eugene Yakota 的 <a href="http://eed3si9n.com/constraining-class-linearization-in-Scala">constraining class linearization in scala</a>，在这篇博客中他介绍他发现的 "patronus type" 模式</p>
+</li>
+<li>
+<p><a id="the-flying-sandwich-part"></a>[the-flying-sandwich-part] Eugene Yakota 的 Scala 模式和开发建议 <a href="http://eed3si9n.com/node/139">Scala: The flying sandwich parts</a></p>
+</li>
+<li>
+<p><a id="package-object"></a>[package-object] Martin Odersky, Lex Spoon - <a href="http://www.scala-lang.org/docu/files/packageobjects/packageobjects.html">Package Objects</a> 网站（2010）</p>
+</li>
+<li>
+<p><a id="union-types-miles"></a>[union-types-miles] <strong>Miles Sabin</strong> 解释了 Union Types <a href="http://www.chuusai.com/2011/06/09/scala-union-types-curry-howard/">Miles Sabin on Union Types</a></p>
+</li>
+<li>
+<p><a id="vampire-type"></a>[vampire-type] <a href="http://meta.plasm.us/posts/2013/07/12/vampire-methods-for-structural-types/">Vampire Methods for Structural Types</a></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>演讲</p>
+</div>
+<div class="ulist bibliography">
+<ul class="bibliography">
+<li>
+<p><a id="types-of-types-lambda-days"></a>[types-of-types-lambda-days] <strong>Konrad Malawski</strong>（作者本人）在 <a href="http://lambdadays.org">Lambda Days Krakรณw 2014</a> 对本文做了一个快速介绍和总览。这里有 <a href="https://vimeo.com/87986458">视频</a> 和 <a href="http://www.slideshare.net/ktoso/scala-types-of-types-lambda-days">幻灯片</a></p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="thanks-and-kudos"><a class="anchor" href="#thanks-and-kudos"></a>31.2. Thanks and kudos</h3>
+<div class="paragraph">
+<p>我要特别感谢所有参与校对和审阅的人，你们帮助我打磨了这篇文章并且多次给了很有价值的反馈(按时间顺序:-)):</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>感谢 Sergio Rodrigez，他的文章审阅是我这辈子见过最有深度和建议的</p>
+</li>
+<li>
+<p>感谢 Andrzej Grzesik，来自 <a href="http://java.pl">PolishJUG</a> / <a href="http://geecon.org">GeeCON</a></p>
+</li>
+<li>
+<p>感谢 Joshua Sureth 在 devoxx 午饭后的精彩评论和例子</p>
+</li>
+<li>
+<p>感谢 <a href="http://softwaremill.com">SoftwareMill</a> 的审阅和评论</p>
+</li>
+<li>
+<p>感谢 <a href="http://virtuslab.com">VirtusLab</a> 提出的拼写纠正、makefile 和建议</p>
+</li>
+<li>
+<p>感谢 <a href="http://www.krakowscala.pl">Kraków Scala User Group</a> 的阅读校对和建议</p>
+</li>
+<li>
+<p>所有提交了 PR 改进拼写和其他小错误的人</p>
+</li>
+<li>
+<p><em>TODO, 还有更多的人</em></p>
+</li>
+<li>
+<p>特别是你，感谢阅读</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>非常欢迎 PR 和评论，这个是 <a href="https://github.com/ktoso/scala-types-of-types">原文的git仓库</a>，这个是 <a href="https://github.com/wqlin/scala-types-of-types">我本人翻译的 git 仓库</a>。</p>
+</div>
+<div class="paragraph">
+<p>我们的类型系统就介绍到这里了，如果你觉得有不完整或者需要改进的，可以给我或者给原作者发邮件。<em>生活就是在学习</em>&#8201;&#8212;&#8201;<a href="mailto:konrad.malawski@java.pl">Konrad <em>ktoso</em> Malawski</a></p>
+</div>
+<div class="paragraph">
+<p>我的邮箱 <a href="mailto:wqlin0@gmail.com">wqlin</a></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="give-back-some-kudos"><a class="anchor" href="#give-back-some-kudos"></a>31.3. Give back some kudos!</h3>
+<div class="paragraph">
+<p>如果你喜欢这篇博客，请使用下面的按钮通过 IRC 或者其他聊天服务、邮件、社交网络分享给你的朋友们！:-)</p>
+</div>
+<!-- Place this tag where you want the +1 button to render. -->
+<div class="g-plusone"></div>
+
+<!-- Place this tag after the last +1 button tag. -->
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/platform.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="twitterapi" data-lang="en">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+<script type="text/javascript" src="http://www.reddit.com/static/button/button1.js"></script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92286239-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+<style>
+li.active {
+  background: aliceblue;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="https://wqlin.github.io/scala-types-of-types/assets/js/bootstrap.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#toc ul').addClass('nav nav-list');
+  $('body').scrollspy({ target: '#toc' });
+});
+</script>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2018-01-07 23:24:18 CST
+</div>
+</div>
+</body>
+</html>

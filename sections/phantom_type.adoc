@@ -1,0 +1,89 @@
+== Phantom Type
+
+Phantom Types 听起来很奇怪，但它的作用很契合它的名字，可以解释为“永远不能实例化的类型”。
+通常我们不会直接使用它们，而是用它们在我们的类型中执行更严格的逻辑。
+
+在这个例子中，我们会使用一个 `Service` 类，包含 `start` 和 `stop` 方法。
+现在我们想确保你不能（类型系统不允许你）启动一个已经启动的 service，反之亦然。
+
+让我们开始准备我们的"标记特质"，它们不包含任何逻辑 - 我们仅仅使用它们来表达 service 的状态：
+
+```scala
+sealed trait ServiceState
+final class Started extends ServiceState
+final class Stopped extends ServiceState
+```
+
+注意我们将 `ServiceState` 标记为 `sealed` 确保其他人不能向我们的系统再添加新的状态。
+我们也将 `Started` 和 `Stopped` 定义为 final，这样其他人不能继承它们，然后向系统添加新的类型。
+
+[NOTE]
+====
+*`sealed` 关键字*
+
+`sealed` 确保所有继承同一个类或者特质的类都定义在同一个编译单元。
+比如，如果你可以在文件 `State.scala` 中定义 `sealed trait State` 和一些 state 实现，
+但是你不能在其他文件中继承 `State`（比如 MyStates.scala)
+
+`sealed` 仅适用于它所定义的类型，不适用子类型。所以虽然你不能在其他文件中继承 State，
+但是你定义了一个这样的类型 `trait UserDefinedState extends State`，那么其他用户还是可以定义 `UserDefinedState` 的子类型。
+如果你想要阻止这样的事情，你应该像我们在这个例子中一样将子类型标记为 final。
+====
+
+定义好之后，我们就可以将它们作为 Phantom Types 使用。
+首先让我们定义一个 Service 类，接受一个 `State` 类型参数 - _注意在这个类中我们没有用到任何 `State` 类型的值_。
+它仅仅存在那里，像一个鬼魂，或者幽灵 - 这就是它名字的来源：
+
+```scala
+class Service[State <: ServiceState] private () {
+  def start[T >: State <: Stopped]() = this.asInstanceOf[Service[Started]]
+  def stop[T >: State <: Started]() = this.asInstanceOf[Service[Stopped]]
+}
+object Service {
+  def create() = new Service[Stopped]
+}
+```
+
+然后在伴生对象中，我们定义了 Service 的一个实例，一开始它的状态是 `Stopped`。`Stopped` 状态符合类型参数的类型限制（`<: ServiceState`）。
+
+当我们想要启动/停止一个已经存在的 Service，有趣的事情发生了。例如，`start` 方法的类型限制只对 `T` 的一个值 `Stopped` 有效。
+在我们的例子中，为了转换到相反的状态，我们返回同样的实例，并且显式转换到需要的状态。
+因为没有其他类型使用这个类型，在转换过程你不会遇到 class cast 异常。
+
+
+现在让我们使用 REPL 来研究上面的例子，这将作为本节一个很好的补充：
+
+[source,scala]
+----
+scala> val initiallyStopped = Service.create() <1>
+initiallyStopped: Service[Stopped] = Service@337688d3
+
+scala> val started = initiallyStopped.start()  <2>
+started: Service[Started] = Service@337688d3
+
+scala> val stopped = started.stop()            <3>
+stopped: Service[Stopped] = Service@337688d3
+
+scala> stopped.stop()                          <4>
+<console>:16: error: inferred type arguments [Stopped] do not conform to method stop's 
+                     type parameter bounds [T >: Stopped <: Started]
+              stopped.stop()
+                      ^
+
+scala> started.start()                         <5>
+<console>:15: error: inferred type arguments [Started] do not conform to method start's 
+                     type parameter bounds [T >: Started <: Stopped]
+              started.start()
+----
+<1> 这里我们创建了一个初始实例，初始状态为 `Stopped`
+<2> 可以启动一个状态为 `Stopped` 的 service，返回类型是 `Service[Started]`
+<3> 可以停止一个状态为 `Started` 的 service，返回类型是 `Service[Stopped]`
+<4> 然而停止一个已经停止的 service（`Service[Stopped]`）是非法的，不能通过编译。注意打印出的类型限制！
+<5> 类似地，启动一个已经启动的 service（`Service[Started]`）也是非法的。注意打印出的类型限制！
+
+正如你所看到的，Phantom Types 是另一种使得我们代码更加类型安全的方式（或者我应该说 "状态安全"！？）
+
+TIP: 如果你好奇哪个”不那么疯狂的库“使用了 Phantom Type，
+一个很好的例子是 https://github.com/foursquare/rogue[Foursquare Rogue]（MongoDB 查询 DSL），
+使用了 Phantom Type 确保一个 query builder 在正确的状态 - 比如可以在 builder 上正确调用 limit(3)。
+

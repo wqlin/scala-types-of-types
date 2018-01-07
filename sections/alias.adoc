@@ -1,0 +1,18 @@
+== Type Alias
+
+Type alias 实际上并不是一种类型，而是一个能用来提高我们代码可读性的技巧：
+```scala
+type User = String
+type Age = Int
+
+val data:  Map[User, Age] =  Map.empty
+```
+使用这个技巧，现在 Map 的定义一下变得"合理"了。
+如果我们只是使用了一个 `String => Int` 类型的 map，那么我们会降低代码的可读性。
+在这里，我们可以继续使用原始类型（也许我们需要原始类型的性能等），但是使用 Type Alias *命名*它们，便于以后的读者理解这个类。
+
+NOTE: 注意，当你为一个类创建别名时，不会将伴生对象关联在一起。例如，
+假设你定义了一个 `case class Person(name: String)` 和一个别名类型 `User = Person`。
+调用 `User("John")` 会导致_错误_，因为 `Person("John")` 会隐式调用 `Person` 伴生对象的 `apply` 方法，
+但是伴生对象在这种情况下没有被定义别名，所以 `User("John")` 就报错。
+

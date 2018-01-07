@@ -1,0 +1,53 @@
+== Self Type Annotation
+
+**Self Types** 可用于表达"依赖（require）"关系，如果其他类要使用这个特质，它应该提供这个特质所依赖的实现。
+
+让我们看看一个例子，其中一个 service 需要一个 Module 提供的其他类型的 service。我们可以用下面的 Self Type 注解表达：
+
+```scala
+trait Module {
+  lazy val serviceInModule = new ServiceInModule
+}
+
+trait Service {
+  this: Module =>
+
+  def doTheThings() = serviceInModule.doTheThings()
+}
+```
+
+第二行 `this: Module =>` 可以被读作 "I'm a Module"。这看起来和定义一个继承 `Module` 的特质类似。
+那么这与直接继承 `Module` 有什么区别吗？
+
+当使用 self type 时，这意味其他人要使用 Service 必须在实例化时提供一个 Module 或者 Module 子类型实例：
+
+```scala
+trait TestingModule extends Module { /*...*/ }
+
+new Service with TestingModule
+```
+
+如果你尝试实例化而不混入所需要的特质，那么就会像下面这样失败：
+
+```scala
+new Service {}
+
+// class Service cannot be instantiated because it does not conform to its self-type Service with Module
+//              new Service {}
+//              ^
+```
+
+你还应该记住，使用 self-type 语法时可以指定一个以上的特质。现在让我们来谈谈为什么它叫做 self-type（除了可耻地点头"是的，这样的命名很合理“）。
+这是因为一种使用 self-type 的流行方式如下：
+
+```scala
+class Service {
+  self: MongoModule with APIModule =>
+
+  def delegated = self.doTheThings()
+}
+```
+
+事实上，你可以使用任何合法标识符（不仅仅是 `this` 或者 `self`）然后在你的类中引用它。
+
+

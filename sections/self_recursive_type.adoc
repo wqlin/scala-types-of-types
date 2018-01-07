@@ -1,0 +1,83 @@
+== Self-Recursive Type
+
+在多数文献中，Self-recursive Types 被称为 *F-Bounded Types*，
+所以你会发现许多文章或者博客都提到 "F-bounded"。
+实际上，F-bounded 是 "self-resurive" 的另一个称呼，表示_子类型约束自身_被出现在类型参数左侧的一个 binders 参数化情况。
+由于 self-recursive 含义更直观，所以我们会本小节中继续使用（而小节标题旨在帮助那些试图 google 什么是 "F-bounded" 的人）
+
+=== F-Bounded Type
+
+虽然 self-resurive type 并不是 Scala 的特定类型，但是有时还是会引起一些注意。
+对于许多人来说，一个熟悉（也有可能不知道）的 self-recursive type 例子是 Java 的 `Enum<E>`，如果你对此感兴趣，
+可以查看 http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/6-b14/java/lang/Enum.java[Enum 源码]。
+不过现在让我们回到 Scala ，首先看看我们实际上在讨论什么。
+
+TIP: 在本小节，我们不会深入讨论这一类型。
+如果你对在 Scala 中深入使用 self-recursive type 感兴趣，可以看看 Kris Nuttycombe 的 http://logji.blogspot.se/2012/11/f-bounded-type-polymorphism-give-up-now.html[F-Bounded Type Polymorphism Considered Tricky]。
+
+想象你有一个 `Fruit` 特质，`Apple` 和 `Orange` 类继承了这个特质。Fruit 特质还有一个 "compareTo" 方法，
+现在问题来了：想象一下你想实现 "我不能用 oranges 与 apples 比较，因为它们是完全不同的东西！"。
+首先让我们看看不考虑编译安全的最简单实现：
+
+```scala
+// 最简单的实现，Fruit 没有被自递归参数化
+
+trait Fruit {
+  final def compareTo(other: Fruit): Boolean = true   // 在我们的例子中实现不重要，我们只关心编译时
+}
+
+class Apple  extends Fruit
+class Orange extends Fruit
+
+val apple = new Apple()
+val orange = new Orange()
+
+apple compareTo orange // 编译成功，但我们希望这句话不能通过编译
+```
+
+在上面朴素的实现中，因为 `Fruit` 特质不知道任何继承它的类的线索，所以不能限制 compareTo 的签名使得其只能接受"_与 `this` 相同的子类_（_the same subclass as_ `this`）"的参数。
+让我们使用 *Self Recursive Type Parameter* 重写这个例子：
+
+```scala
+trait Fruit[T <: Fruit[T]] {
+  final def compareTo(other: Fruit[T]): Boolean = true // 在我们的例子中实现并不重要
+}
+
+class Apple  extends Fruit[Apple]
+class Orange extends Fruit[Orange]
+
+val apple = new Apple
+val orange = new Orange
+```
+
+注意到 `Fruit` 签名中的类型参数。你可以读作"我接受一个类型参数 `T`，并且 `T` 必须是一个 `Fruit[T]`"，
+要满足这样要求的唯一方法是像类 `Apple` 和 `Orange` 那样继承这个特质。
+现在，如果我们尝试将 `apple` 与 `orange` 比较，我们会得到一个编译错误：
+
+```repl
+scala> orange compareTo apple
+<console>:13: error: type mismatch;
+ found   : Apple
+ required: Fruit[Orange]
+              orange compareTo apple
+
+scala> orange compareTo orange
+res1: Boolean = true
+```
+现在我们能确定我们只能将 apples 与 apples 比较，其他水果与同类型的 Fruit（_子类_）比较。
+当然这里还有更多需要讨论的 - 我们能将 `Apple` 和 `Orange` 的子类分别与 `Apple` 和 `Orange` 比较吗？
+因为在类型层次中实现 `Apple` 和 Orange 时，我们填入的类型参数分别是 `Apple` 和 `Orange`，
+我们的意思是 `Apple` 只能与 `Apple` 比较，这也意味着 `Apple` 的子类可以互相比较 - 
+这依然满足 Fruit 签名的 `compareTo` 限制，因为现在我们的调用右边是比 `Fruit[Apple]` 更具体的类型。
+比如，让我们尝试将一个日本 apple（ja. "りんご", "ringo"）和一个波兰 apple（pl. "Jabłuszko"）比较：
+
+```scala
+object `りんご`  extends Apple
+object Jabłuszko extends Apple
+
+`りんご` compareTo Jabłuszko
+// true
+```
+
+TIP: 你可以使用更花哨的技巧实现同样的类型安全，比如 path dependent types 或者 implicit parameters 和 type classes。但是这里最简单的办法是使用 self-recursively type。
+

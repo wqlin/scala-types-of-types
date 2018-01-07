@@ -1,0 +1,49 @@
+== Enumeration
+
+Scala 不像 Java 中有内置的 "enum"。但是我们可以使用一些（嵌入在 Enumeration 类）的小技巧，写出类似的枚举。 
+
+=== Enumeration
+当前 Scala （2.10.x）实现类似枚举的结构是 `Enumeration` 类：
+
+```scala
+object Main extends App {
+
+  object WeekDay extends Enumeration {               <1>
+    type WeekDay = Value                             <2>
+    val Mon, Tue, Wed, Thu, Fri, Sat, Sun = Value    <3>
+  }
+  import WeekDay._                                   <4>
+
+  def isWorkingDay(d: WeekDay) = ! (d == Sat || d == Sun)
+
+  WeekDay.values filter isWorkingDay foreach println <5>
+}
+```
+<1> 首先我们声明一个可以包含我们枚举值的 object，继承 Enumeration
+<2> 这里我们为 Enumerations 内部 `Value` 类型定义一个 <<type-alias,Type Alias>>，因为我们使用名字匹配 object 的名字，我们就可以通过 `WeekDay` 引用 `Value`（是的，这几乎就是个黑魔法）
+<3> 这里我们使用 "multi assignment"，左边的每个 val 会被赋予不同 Value 的实例。你也可以写成 7 个 val
+<4> 这句 import 做了两件事：首先我们不需要加上前缀 `WeekDay` 就可以引用 `Mon` 了；另外 import 也将 `type WeekDay` 引入当前作用域，所以我们可以在下面的方法定义中直接使用。
+<5> 最后，我们得到一些枚举方法。这些方法并不是魔术，因为大多数方法在我们创建新的 Value 实例就存在了。
+
+
+正如你所看到的，枚举在 Scala 中并不是内置的，而是基于 Scala 类型系统巧妙地实现的，使它看起来像一个枚举类。
+在某些情况下，这样的实现也许够用，但是还是没有 Java enum 丰富，比如添加新的值和行为。
+
+
+=== @enum
+
+WARNING: `@enum` 注解当前还只是一个提议，正在 scala-internals 上讨论： https://groups.google.com/forum/#!topic/scala-internals/8RWkccSRBxQ%5B101-125-false%5D[enumeration must die].
+
+与即将到来的注解宏一起，我们可能会有 `@enum` 注解，这在相关 Scala Improvement Process 文档中有所描述： <<enum-sip>>.
+
+```scala
+@enum
+class Day {
+  Monday    { def goodDay = false }
+  Tuesday   { def goodDay = false }
+  Wednesday { def goodDay = false }
+  Thursday  { def goodDay = false }
+  Friday    { def goodDay = true  }
+  def goodDay: Boolean
+}
+```

@@ -1,0 +1,55 @@
+== Type Constructor +++<span style="color:red">&#x2717;</span>+++
+
+Type Constructor 的作用非常类似于函数，但是作用在类型级别。也就是说，在普通编程中，你可以有一个函数，接受一个值 `a` 并基于这个值返回另一个值 `b`；
+那么在类级别编程（type-level programming）中，你可以将 List[+A] 看成一个有类似功能的 type constructor：
+
+* `List[+A]` 接受一个类型参数（`A`），
+* `List[+A]` 本身不是一个合法的类型，你需要填入一个类型参数 `A` - "_构造这个类型（construct the type）_"，
+* 通过填入 `Int`，你会得到一个具体的类型 `List[Int]`
+
+基于上面的例子，你可以看到 type constructor 与普通的 constructors 非常相似 - 唯一的区别是我们在处理类型（type）而不是对象的实例（instances of objects）。
+在这里值得一提的是，在 Scala 中我们不能说某个变量的类型是 `List`，*不像*在 Java 中存在原始类型 `List<Object>`。
+Scala 更严格，不允许我们使用 `just a List` 代替一个具体类型，因为它期望一个真正的类型 - 而不是一个 type constructor。
+
+在 *Scala 2.11.x*，与这个主题相关的是，我们在 REPL 中有了一个强大的命令 - `:kind` 命令。
+该命令允许你检查一个类型是否是 higher kind。首先让我们来看看一个简单的 type constructor，比如 `List[+A]`：
+
+```scala
+// Welcome to Scala version 2.11.0-M5 (Java HotSpot(TM) 64-Bit Server VM, Java 1.8.0-ea).
+// Type in expressions to have them evaluated.
+
+:kind List
+// scala.collection.immutable.List's kind is F[+A]
+
+:kind -v List
+// scala.collection.immutable.List's kind is F[+A]
+// * -(+)-> *
+// This is a type constructor: a 1st-order-kinded type.
+```
+
+在这里我们看到 scalac 能够告诉我们 `List` 事实上是一个 type constructor（如果使用 `-verbose` 选项，编译器能输出更多的信息）。
+让我们来研究下这个语法： `* -> *`。这个语法被广泛用于表示 kinds，实际上我发现该语法可能受到了 Haskell 的启发 - 这是 Haskell 用来打印函数签名的语法。
+这个语法最直观的读法是"接受一种类型，返回另一种类型"。你可能注意到我们省略了 Scala REPL 的输出，即关系中的加号（如 `* -(+)-> *`），这表示 variance bounds，
+你可以在  <<type-variance-in-scala, Type Variance in Scala>> 一节了解更多。
+
+如前所述，`List[+A]`（或者 `Option[+A]`，或者 `Set[+A]`... 或者接受一个类型参数的类型）是 type constructor 最简单的情况 - 
+它们只接受一个类型参数。我们称这样的 type constructor 为 *first-order kinds*（`* -> *`）。
+值得一提的是，即使一个 `Pair[+A, +B]`（可以表示成 `* -> * -> *`）也还是 *first-order* 而不是 *higher-order kind*。
+在下一小节，我们将分析什么是 higher order kind 以及如何发现它们。
+
+== Higher-Order Kind +++<span style="color:red">&#x2717;</span>+++
+
+WARNING: TODO 现在还没有有价值的东西，即将到来....
+
+另一方面，*Higher Kinds* **Higher Kinds** 允许我们对 type constructors 抽象，正如 type constructors 允许我们对 type 抽象。
+
+一个经典的例子就是 `Monad`:
+
+```scala-repl
+scala> import scalaz._
+import scalaz._
+
+scala> :k Monad // Finds locally imported types.
+Monad's kind is (* -> *) -> *
+This is a type constructor that takes type constructor(s): a higher-kinded type.
+```

@@ -1,0 +1,33 @@
+== Type Ascription
+
+
+Scala 有类型推断，这意味我们不需要每次都在源代码中声明变量的类型，可以直接使用 `val` 或者 `def` 。
+这种显式声明变量类型的方式称为 Type Ascription（有时也称为 "Type Annotation"，
+但是这样的名字很容易引起误解，所以没有在 Scala 规范中使用）。
+
+```scala
+trait Thing
+def getThing = new Thing { }
+
+// 没有 Type Ascription，变量类型被推导为 `Thing`
+val inferred = getThing
+
+// 有 Type Ascription
+val thing: Thing = getThing
+```
+
+在上述情况下，我们可以省略 Type Ascription。不过你可能会决定总是描述公有方法（public methods）的返回类型（*这是一个好主意！*），使得代码更加自我文档化。
+
+当你犹豫的时候，可以参考下面的提示问题来决定是否使用 Type Ascription：
+
+- 是一个参数吗？如果是的话，那么你必须加上。
+- 是公有方法的返回值吗？如果是的话，那么需要加上以便于代码自我文档化和控制返回类型。
+- 是递归或者重载方法的返回值吗？如果是的话，那么你必须加上。
+- 你是否需要返回一个比推导器推导的更通用的类型？如果是的话，那么需要 Type Ascription，不然你就会向客户端暴露代码实现细节
+- 否则的话...不要加上 Type Ascription
+- 相关提示：加上 Type Ascription 可以加快编译速度，并且能看到方法的返回类型也是很好的
+
+所以我们在变量名字后加上 Type Ascription。说了这么多，让我们进入下一个话题，其中这些类型会变得越来越有趣。
+
+
+

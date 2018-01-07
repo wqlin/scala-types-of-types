@@ -1,0 +1,34 @@
+== Existential Types
+Existential Types 与类型擦除密切相关，而所有 JVM 语言都必须面对类型擦除。
+
+
+```scala
+val thingy: Any = ???
+
+thingy match {
+  case l: List[a] =>
+     // 小写字母 'a', 匹配所有类型... '那么 'a' 的类型是什么呢?!
+}
+```
+
+因为运行时类型擦除，我们不知道 `a` 的类型。
+我们只知道 List 是一个 type constructor，`* -> *`，所以一定存在某些类型 `T` 可以被 List 用来构造出一个合法的 `List[T]`。
+这里的某些类型，就是 *existential type*！
+
+Scala 为此提供了一个缩写：
+
+```scala
+List[_]
+ //  表示一个未知类型，但是不知道是哪一个
+```
+
+假设你正在使用 Abstract Type Member，在我们的例子就是一些 Monad。
+我们想要用户在 Monad 中只能使用 `Cool` 实例，因为比如说，这样我们的 Monad 类型才有意义。
+我们可以使用 *Existential Type T* 做类型限制实现：
+
+```scala
+type Monad[T] forSome { type T >: Cool }
+```
+
+参考 http://mikeslinn.blogspot.com/2012/08/scala-existential-types.html[scala-existential-type]
+

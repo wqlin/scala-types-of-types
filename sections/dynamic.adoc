@@ -1,0 +1,154 @@
+== Dynamic Type
+
+我曾经犹豫是否应该将 Dynamic Type 加入到这篇文章。最后，我决定还是加吧，因为这样的话可以使得这篇描述类型的文章更完整。那么问题是，为什么我会这么犹豫呢？
+
+*Scala 允许我们在一个 Staticly/Strictly Typed 语言中有 **Dynamic Types**！*这就是为什么我考虑跳过，并想在其它位置描述它 - 因为它基本是在 "hacking around" 你所看过的类型。
+让我们在看看实际例子，以及它是如何融入到 Scala 类型生态系统中的。
+
+
+想象一个包含任意 JSON 数据 `JsonObject` 类。现在我们定义方法匹配这个 JSON 对象的键值，返回一个 `Option[JValue]`，其中一个 JValue 可以是另一个 `JObject`，`JArray`，`JString` 或者 `JNumber`。
+用法类似于下面的例子。
+
+
+*但是在这之前，要记得在文件（或者 REPL）导入开启这个语言特征*。有不少特征（比如实验性质的宏）需要在文件中显式导入才能开启。
+如果你想要了解更多有关这些特征，可以看看 http://www.scala-lang.org/api/current/scala/language$.html[scala.language] 对象或者读一读文档 Scala Improvement Process 18 http://docs.scala-lang.org/sips/modularizing-language-features.html[SIP-18]
+
+
+```scala
+// 记住，我们需要导入才能开启这个语言特征
+import scala.language.dynamics
+```
+
+```scala
+// TODO: 缺少实现
+class Json(s: String) extends Dynamic {
+  ???
+}
+
+val jsonString = """
+  {
+    "name": "Konrad",
+    "favLangs": ["Scala", "Go", "SML"]
+  }
+"""
+
+val json = new Json(jsonString)
+
+val name: Option[String] = json.name
+// （一旦我们加入了实现）上述代码就可以通过编译
+```
+
+那么... 我们是如何在静态语言中融入动态类型的呢？答案很简单 - 编译器重写和一个*特殊的标记特质*：`scala.Dynamic`。
+
+好了，结束胡言乱语然后回到基础。那么...我们怎么使用这些动态类型呢？事实上，我们需要实现几个**魔术**方法：
+
+* **applyDynamic**
+* **applyDynamicNamed**
+* **selectDynamic**
+* **updateDynamic**
+
+让我们依次通过例子了解它们。
+
+=== applyDynamic
+好了，我们的第一个魔术方法看起来像：
+
+```scala
+// applyDynamic 例子
+object OhMy extends Dynamic {
+  def applyDynamic(methodName: String)(args: Any*) {
+    println(s"""|  methodName: $methodName,
+                |args: ${args.mkString(",")}""".stripMargin)
+  }
+}
+
+OhMy.dynamicMethod("with", "some", 1337)
+```
+
+**applyDynamic** 的签名接受方法名字和方法参数。在这里我们依次访问它们，构造出一个字符串。我们的实现仅打印出我们所关心的方法调用。
+比如该方法是否真的得到了我们希望的参数值/方法名字？方法输出将会是：
+
+```scala
+methodName: dynamicMethod,
+  args: with,some,1337
+```
+
+
+=== applyDynamicNamed
+好了，刚才的例子很简单。但是 applyDynamic 不能让我们控制参数的名字。如果我们能过写 `JSON.node(nickname = "ktoso")` 该多好呀？Hmm...事实是我们确实可以！
+
+```scala
+// applyDynamicNamed 例子
+object JSON extends Dynamic {
+  def applyDynamicNamed(name: String)(args: (String, Any)*) {
+    println(s"""Creating a $name, for:\n "${args.head._1}": "${args.head._2}" """)
+  }
+}
+
+JSON.node(nickname = "ktoso")
+```
+
+这一次我们不仅得到一串参数值的列表，还得到了参数的名字。多亏了这个，这次例子的输出是：
+
+```scala
+Creating a node, for:
+"nickname": "ktoso"
+```
+
+现在我可以想象基于 `applyDynamicNamed` 可以构建出一些很漂亮的 *DSLs*！
+
+=== selectDynamic
+
+现在，是时候看看一些更加"不寻常"的方法了。我们很容易理解 apply 方法。它们只是些拥有任意名字的方法。但是，是不是 Scala 中所有动态类型都需要定义成方法 - 或者说我们可不可以在对象中定义一个类似于字段的方法？
+让我们尝试一下！*这里的例子使用 applyDynamic，然后尝试表现出我们定义了一个没有 () 的方法*：
+
+```scala
+OhMy.name // 编译错误
+```
+
+为什么用 *applyDynamic* 不行呢？我猜你已经知道原因了。这些方法（没有 ()）会被*特殊*处理，因为它们通常代表字段。这样的调用不会触发 `applyDynamic`。
+
+让我们看看我们的第一个 `selectDynamic` 调用：
+
+```scala
+class Json(s: String) extends Dynamic {
+  def selectDynamic(name: String): Option[String] =
+    parse(s).get(name)
+}
+```
+
+这次，当我们执行 `HasStuff.bananas`，我们会得到 "I have bananas!"。注意到我们返回了值而不是将它打印出来。这是因为这次方法调用要表现的像一个字段一样。
+而且这里描述的其他方法中也可以返回值（可以是任意类型）（*applyDynamic* 可以返回出一个字符串而不是打印出来）
+
+
+=== updateDynamic
+你会问还剩下什么呢？那么你可以问问你自己：既然我可以像 `Dynamic` 对象一样为某些字段定义了某些值...那么我还能用它来做什么呢？
+我的回答是："设置字段的值"。这就是 `updateDynamic` 的作用。但是 `updateDynamic` 有一条特殊的规则 - 只有你实现了 selectDynamic，它才有用。
+如果我们只实现了 updateDynamic，我们会得到 selectDynamic 没有实现的错误，无法通过编译。
+如果你仔细思考，你会发现从语义来说这很合理。
+
+当我们完成了这个例子后，实际上我们可以让上一个（错误）代码片段正确工作。
+
+```scala
+object MagicBox extends Dynamic {
+  private var box = mutable.Map[String, Any]()
+
+  def updateDynamic(name: String)(value: Any) { box(name) = value }
+  def selectDynamic(name: String) = box(name)
+}
+```
+
+使用这个 `Dynamic` "*MagicBox*"，我们可以将值存放在任意的"字段"（它们看起来确实很像字段，但实际上并不是;-)）。一个运行例子如下：
+
+```scala
+scala> MagicBox.banana = "banana"
+MagicBox.banana: Any = banana
+
+scala> MagicBox.banana
+res7: Any = banana
+
+scala> MagicBox.unknown
+java.util.NoSuchElementException: key not found: unknown
+```
+
+另外...你是否感兴趣 Dynamic（https://github.com/scala/scala/blob/2.13.x/src/library/scala/Dynamic.scala[源代码见此]）是如何实现的？有趣的是 `Dynamic` 特质本身没有做任何事情 - 它是"空的"，仅仅是个标记接口。
+显然，这里所有重活（**调用方重写(call-site-rewriting)**）都由编译器完成。

@@ -1,0 +1,81 @@
+= Scala's Types of Types
+:awestruct-layout: base
+ifdef::awestruct[]
+:toc:
+:toc-placement: preamble
+endif::awestruct[]
+ifndef::awestruct[]
+:toc: right
+:numbered:
+:icons: font
+:idprefix:
+:idseparator: -
+:sectanchors:
+:source-highlighter: pygments
+:pygments-style: tango
+endif::awestruct[]
+:experimental:
+:mdash: &#8212;
+:language: asciidoc
+
+include::sections/intro.adoc[]
+include::sections/type_ascription.adoc[]
+include::sections/unified_type_system.adoc[]
+include::sections/bottom_types.adoc[]
+include::sections/type_word.adoc[]
+include::sections/variance.adoc[]
+include::sections/traits.adoc[]
+include::sections/refinements.adoc[]
+include::sections/package_object.adoc[]
+include::sections/alias.adoc[]
+include::sections/abstract_type_member.adoc[]
+include::sections/self_recursive_type.adoc[]
+include::sections/type_constructor.adoc[]
+include::sections/case_class.adoc[]
+include::sections/enumeration.adoc[]
+include::sections/value_class.adoc[]
+include::sections/type_class.adoc[]
+include::sections/universal_trait.adoc[]
+include::sections/self_type.adoc[]
+include::sections/phantom_type.adoc[]
+include::sections/structural_type.adoc[]
+include::sections/path_dependent_type.adoc[]
+include::sections/type_projection.adoc[]
+include::sections/existential_type.adoc[]
+include::sections/specialized_types.adoc[]
+include::sections/type_lambda.adoc[]
+include::sections/union_type.adoc[]
+include::sections/delayed_init.adoc[]
+include::sections/dynamic.adoc[]
+
+include::bibliography.adoc[]
+include::sections/kudos.adoc[]
+
+++++
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-92286239-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+++++
+
+++++
+<style>
+li.active {
+  background: aliceblue;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+<script src="https://wqlin.github.io/scala-types-of-types/assets/js/bootstrap.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#toc ul').addClass('nav nav-list');
+  $('body').scrollspy({ target: '#toc' });
+});
+</script>
+++++

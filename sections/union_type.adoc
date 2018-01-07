@@ -1,0 +1,22 @@
+== Union Type +++<span style="color:red">&#x2717;</span>+++
+
+WARNING: 这部分还不完整，请参考 Miles' 博客了解详细细节（下面有链接）:-)
+
+在我们开始讨论这个类型之前需要回忆起集合论，然后从"交集类型"看待已经熟悉的构造 `A with B`：
+
+为什么呢？这是因为唯一满足这样的类型限制的是那些有 `type A` 和 `type B` 的类型，那么在集合论中，这就是个交集。
+另一方面，让我们思考什么是 Union Type。
+
+Union Type 应该是两个集合的联合（union），使用集合表示应该是 `type A` **或** `type B`。
+我们的任务是使用 Scala 的类型系统介绍这样的类型。虽然 Union Type 并不是 Scala 的 first-class 构件（它不是内置），我们可以很容易的实现它们。
+
+如果你想要深入了解 Union Type，*Miles Sabin* 在 http://www.chuusai.com/2011/06/09/scala-union-types-curry-howard/[the blog post 'Unboxed union types in Scala via the Curry-Howard isomorphism'] 中详细解释了这个技巧。
+
+```scala
+type |∨|[T, U] = { type λ[X] = ¬¬[X] <:< (T ∨ U) }
+
+def size[T : (Int |∨| String)#λ](t : T) = t match {
+    case i : Int => i
+    case s : String => s.length
+}
+```

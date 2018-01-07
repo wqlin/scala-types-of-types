@@ -1,0 +1,76 @@
+== Abstract Type Member
+
+让我们进一步深入使用 Type Aliases，这样的用法称为 Abstract Type Members。
+
+有了 Abstract Type Members，我们可以做到"定义一个抽象类型，并希望其他人告诉我具体类型 - 我们可以用 MyType 来引用这个类型"。
+Abstract Type Members 最基础的功能是允许我们无需使用 `class Clazz[A, B]` 构建泛型类（模板），
+我们可以在类中命名 abstract type member(s)，例如：
+
+```scala
+trait SimplestContainer {
+  type A      // Abstract Type Member
+
+  def value: A
+}
+```
+
+对于熟悉 Java 的人来说，上面的语法看起来与 `Container<A>` 类似， 
+但我们会在 <<path-dependent-type, Path Dependent Types>> 和下面的例子中看到 Abstract Type Members 功能更强大。
+
+
+需要注意的是尽管 `type A` 的注释中包含 "abstract"，但是它与抽象字段不同 - 所以即使我们不"实现"类型成员 A，也可以创建一个 SimplestContainer 实例：
+
+```scala
+new SimplestContainer // 合法，但是 A 是 "anything"
+```
+
+你可能想知道 `A` 是什么类型，考虑到我们没有提供任何关于它的信息。事实上，`type A` 是 `type A >: Nothing <: Any` 的简写，意味着 A 可以是"任意类型（anything）"。
+
+```scala
+object IntContainer extends SimplestContainer {
+  type A = Int
+
+  def value = 42
+}
+```
+
+因为我们使用 <<type-alias, Type Alias>> 提供了一个抽象类型，现在我们可以实现一个返回 `Int` 的方法。
+
+当我们对 Abstract Type Members 应用类型约束时，事情变得更有趣了。
+比如，想象你想要定义一个只能存储任意 `Number` 实例的容器。
+我们可以在定义 type members 加上这样的约束：
+
+```scala
+trait OnlyNumbersContainer {
+  type A <: Number
+  def value: A
+}
+```
+
+或者我们可以稍后在类层次结构中添加约束，例如通过混入声明 "only Numbers" 的特质：
+
+```scala
+trait SimpleContainer {
+  type A
+  def value: A
+}
+
+trait OnlyNumbers {
+  type A <: Number
+}
+
+val ints = new SimpleContainer with OnlyNumbers {
+  type A = Integer
+  def value = 12
+}
+
+// 下面的定义不能通过编译
+val _ = new SimpleContainer with OnlyNumbers {
+  def value = "" // error: type mismatch; found: String(""); required: this.A
+}
+```
+
+正如你所看到的，我们可以像使用 Type Parameters 一样使用 Abstract Type Members，
+但是我们无需忍受显式四处传递类型的痛苦 - 因为类型是个字段，我们需要传递。
+我们需要付出的代价就是按名称绑定这些类型。
+

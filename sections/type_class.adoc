@@ -1,0 +1,47 @@
+== Type Class +++<span style="color:red">&#x2717;</span>+++
+
+Type Classes 属于 Scala 中最强大的模式，可以总结为（如果你喜欢花哨的措辞）"ad-hoc polimorphism"。当你读完这节，就应该可以理解这个词的含义了。
+
+Type Classes 为我们解决的典型问题是不需要将两个类绑定在一起就可以提供可扩展的 API。
+这样一个严格绑定，可以使用 Type Classes 避免的例子是继承 `Writable` 接口，使得我们自定义数据类型可写：
+
+
+```scala
+// 还没有 type classes
+trait Writable[Out] {
+  def write: Out
+}
+
+case class Num(a: Int, b: Int) extends Writable[Json] {
+  def write = Json.toJson(this)
+}
+```
+
+使用这种风格，继承并实现接口，我们将 `Num` 绑定到 `Writable` 接口，而且我们必须"此时此刻"就要提供 `write` 的实现，
+这使得其他人很难提供不同的 `write` 实现 - 他们必须继承 Num！
+另外一个痛点是，我们不能使用一个类两次继承同一个特质，提供不同的序列化目标（你不可以同时继承 `Writable[Json]` 和 `Writable[Protobuf]`）。
+
+所有的这些问题都可以使用基于 `Type Class` 而不是直接继承 `Writeable[Out]` 的方法解决。
+让我们试试看，并详细解释这是如何工作的：
+
+```scala
+trait Writes[In, Out] {                                               <1>
+  def write(in: In): Out 
+}
+
+trait Writable[Self] {                                               <2>
+  def write[Out]()(implicit writes: Writes[Self, Out]): Out = 
+    writes write this
+}
+
+implicit val jsonNum = Writes[Num, Json] {                            <3>
+  def (n1: Num, n2: Num) = n1.a < n1.
+}
+
+case class Num(a: Int) extends Writable[Num]
+```
+
+<1> 首先我们定义一个 Type Class，它的 API 与之前的 `Writable` 特质类似，但是我们不将它混入到一个需要被写入的类，而是将其分开，并且为了知道它的具体实现，我们使用 `Self` <<Type Parameter, 类型参数>>
+<2> 下一步我们将 `Writable` 特质使用 `Self` 参数化，然后序列化目标类型被移到 `write` 的签名。现在，write 还需要一个隐式 `Writes[Self, Out]` 实现处理序列化 - 这就是我们的 Type Class 的实例
+<3> 这就是 Type Class 的实际实现，注意到我们将实例标记为 implicit，这样它就可用于 `write()(implicit Writes[_, _])` 方法
+

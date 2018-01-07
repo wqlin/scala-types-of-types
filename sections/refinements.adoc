@@ -1,0 +1,20 @@
+== Refined Types (refinements)
+
+Refinements 可以很容易的解释为"继承而无需命名子类"（"subclassing without naming the subclass"）。所以在代码中，refinements 看起来像：
+
+```scala
+class Entity
+
+trait Persister {
+  def doPersist(e: Entity) = {
+    e.persistForReal()
+  }
+}
+
+// 我们的 refined 实例（和类型）:
+val refinedMockPersister = new Persister {
+  override def doPersist(e: Entity) = ()
+}
+```
+
+

@@ -1,0 +1,121 @@
+== Specialized Types 
+
+=== @specialized
+
+比起"类型系统"，Type specialization 实际上更像是性能技巧，
+但是如果你想要写出性能良好的集合那么它是非常重要的，值得用心牢记。
+在我们的例子中，我们将实现一个非常有用的集合，叫做 `Parcel[A]`，能够保存一个指定类型的值 - 这是多么有用！
+
+
+```scala
+case class Parcel[A](value: A)
+```
+
+这就是我们的基本实现。那么缺点在哪里呢？因为 `A` 可以是任何类型，即使我们只放入一个 `Int`
+，它也是被表示为 Java **object**。所以上面的类只能处理 objects，对于原始类型需要装箱和拆箱。
+
+```scala
+val i: Int = Int.unbox(Parcel.apply(Int.box(1)))
+```
+
+正如我们所知道 - 不必要的装箱并不是一个好主意，因为它在运行时需要更多的工作量，来回转换 `int` 和 `object Int`。
+有什么可以解决这个问题呢？在这里能应用的一个技巧是为所有的原始类型 "**specialize** 我们的 Parcel 类（比如现在只需要 Long 和 Int），正如这样：
+
+NOTE: 如果你已经读过 <<value-class, Value Class>> 一节，你可能会注意到 `Parcel` 可以轻松使用它们来实现。
+这的确是事实。不过，Scala 从 2.8.1 就引入了 `specialized`，而在 2.10.x 才引入 Value Classes。
+而且，*你可以专门化一个以上的值*（尽管这会*指数级地*增加产生的字节码），而使用 Value Classes 你就被限制只能使用单个值。
+
+```scala
+case class Parcel[A](value: A) {
+  def something: A = ???
+}
+
+// "手动" specialzation
+case class IntParcel(intValue: Int) {
+  override def something: Int = /* 基于底层 Int，没有包装！ */ ???
+}
+
+case class LongParcel(intValue: Long) {
+  override def something: Long = /* 基于底层 Long，没有包装！ */ ???
+}
+```
+
+`IntParcel` 和 `LongParcel` 的实现能有效的避免装箱，因为他们直接使用原始类型，而没有触及到对象帝国。
+现在取决于我们的使用，我们必须手动选择使用哪个 *`Parcel`*。
+
+这样的实现很不错但是...如果有 `N` 个实现，包含每个我们想支持的原始类型（可以是 `int`，`long`，`byte`，`char`，`short`，`float`，`double`，`boolean`，`void` 加上 `Object` 的任意类型），那么我们需要维护很多样板代码。
+
+既然我们熟悉了 specialization 的概念，我们不需要手动实现，来看看 Scala 是如何通过引入 `@specialized` 注解帮助我们的：
+
+```scala
+case class Parcel[@specialized A](value: A)
+```
+
+因为我们给类型参数 `A` 加上了 `@specialized` 注解，
+这告诉编译器要为这个类生成所有 specialized 变体 - 即 `ByteParcel`，
+`IntParcel`，`LongParcel`，`FloatParcel`，`DoubleParcel`，
+`BooleanParcel`，`CharParcel`，甚至 `VoidParcel`（这些并不是实际实现的名字，但是你应该明白背后的想法）。
+编译器还负责选择"正确"的类型，尽可能使用 specialized 版本（如果有的话），所以我们写代码时可以不关心这个类是否是 specialized：
+
+```scala
+val pi = Parcel(1)     // 会使用 `int` specialized 方法
+val pl = Parcel(1L)    // 会使用 `long` specialized 方法
+val pb = Parcel(false) // 会使用 `boolean` specialized 方法
+val po = Parcel("pi")  // 会使用 `Object` 方法
+```
+
+"_太棒了，我们可以在任意的地方使用！_" -- 这是人们发现 specialiation 的常见反应，因为它可以数倍加快低级别操作速度，同时降低内存使用率。
+不幸的是，*我们需要很高的代价*：如果对多个参数使用该注解，那么生成的代码就会变得非常庞大：
+
+```scala
+class Thing[A, B](@specialized a: A, @specialized b: B)
+```
+
+在上面的例子中，我们使用了 specialization 的第二种应用方式 - 将注解加在参数前 - 效果等价于我们直接 specialize `A` 和 `B`。
+请注意到上面的代码会产生 `8 * 8 = 64` 种实现，这是因为编译器要处理 "A 是一个 `int`，B 是一个 `int`" 以及 "A 是一个 `boolean`，但是 B 是一个 `long`" 这些情况 - 你应该明白编译器做了什么。
+事实上，最终生成的类的数量大约在 `2 * 10^(nr_of_type_specializations)`，对于三个类型参数，很容易就产生了上千个类。
+
+当然有办法限制这种指数增长，比如限制需要 specialization 的目标类型。
+比如说我们的 Parcel 多数情况都用于整数类型，从不用于浮点数 - 我们可以告诉编译器只为我们生成 Long 和 Int 类型的：
+
+```scala
+case class Parcel[@specialized(Int, Long) A](value: A)
+```
+
+让我们使用 `:javap Parcel` 看看生成的字节码：
+
+```java
+// Parcel, 为 Int 和 Long 专门化
+public class Parcel extends java.lang.Object implements scala.Product,scala.Serializable{
+    public java.lang.Object value(); // 泛型版本, "处理其他所有情况"
+    public int value$mcI$sp();       // int specialized 版本
+    public long value$mcJ$sp();}     // long specialized 版本
+
+    public boolean specInstance$();  // 检查我们是否在使用 specialized 类的实现
+}
+```
+
+正如你所看到的，编译器为我们准备了额外的 specialized 方法，
+比如 `value$mcI$sp()` 返回一个 `int`，`value$mcJ$sp()` 返回一个 `long`。
+另一个值得提起的方法是 `specInstance$`，如果使用的是 specialized 类，那么该方法返回 `true`。
+
+如果你好奇的话，当前这些类在 Scala 中会被 specialized（这个列表可能不完整）：Function0，Function1，Function2，Tuple1，Tuple2，Product1，Product2，AbstractFunction0，AbstractFunction1，AbstractFunction2。
+尽管可以 specialized 两个以上的参数，但是由于开销太大，人们通常不这么做。
+
+WARNING: 我们要避免装箱的一个主要原因还包含内存效率。想象一个 `boolean`，
+如果能在内存中使用一个 bit 存储它该多好呀。
+悲伤的是这并不是事实（我所知道的任何 JVM），比如说在 HotSpot 中，一个 `boolean` 是用 `int` 表示的，那么它需要占据 4 个字节的空间。
+另一个方面，它的表兄弟 `java.lang.Boolean` 需要 *8 个字节存储对象头*，正如每个 Java 对象都需要，在内部存储 `boolean`（需要额外 4 字节），
+然后由于 Java *对象布局对齐规则（Object Layout Alignment Rules）*，这个对象所占据的空间会被对齐到 16 个字节（8 个字节存储对象头，4 个字节存储值，4 个字节对齐）。
+这就是为什么我们非常想避免装箱的另一个原因。
+
+
+=== Miniboxing +++<span style="color:red">&#x2717;</span>+++
+
+WARNING: Miniboxing 不是 Scala 的一个特征，但是可以作为*编译器插件*与 scalac 一起使用。
+
+我们在前一节解释到 specialization 是非常强大的，但同时也是"编译器炸弹"，存在指数增长的可能性。
+现在已经有一个解决办法了，那就是 Mibiboxing。Miniboxing 是一个编译器插件，能够实现与 `@specialized` 相同的功能，但不会生成上千个类。
+
+WARNING: TODO EPFL 有一个项目可以使得 specialiation 更高效 http://scala-miniboxing.org[Scala Miniboxing]
+

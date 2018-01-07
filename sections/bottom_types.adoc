@@ -1,0 +1,91 @@
+== The Bottom Types - Nothing and Null
+Scala 中，每个变量都有"某种"类型...但是你是否想过在某些"奇怪"的情况下，类型推导器（type inferencer）是如何能继续工作的，
+比如抛出了异常。让我们来看看下面这个 "if/else throw" 例子：
+
+```scala
+val thing: Int =
+  if (test)
+    42                             // : Int
+  else
+    throw new Exception("Whoops!") // : Nothing
+```
+正如你在注释中看到，if 语句块的类型是 Int（容易推导），else 语句块的类型是 Nothing（有趣）。
+推导器推导出 thing 的类型只能是 Int，这是因为 Nothing 的 *Bottom Type* 属性。
+
+NOTE:  一个关于 bottom types 如何工作的直观理解是：_"`Nothing` extends everything."_
+
+类型推导器总会寻找 if/else 语句两个分支的"公共类型"，所以如果一个分支有一个继承了所有类型的类型，
+那么另一个分支的类型就会自动成为 if/else 表达式的类型。
+
+```scala
+类型可视化：
+
+           [Int] -> ... -> AnyVal -> Any
+Nothing -> [Int] -> ... -> AnyVal -> Any
+```
+
+这样的推导方式也适用于 Scala 的第二个 Bottom Type - `Null`。
+
+```scala
+val thing: String =
+  if (test)
+    "Yay!"  // : String
+  else
+  	null    // : Null
+```
+
+正如预料中那样 `thing` 的类型是， String。`Null` 遵循与 Nothing 几乎一样的规则。
+我会用这个例子来谈谈类型推导，以及 AnyVals 和 AnyRefs 之间的区别。
+
+```
+类型可视化：
+
+        [String] -> AnyRef -> Any
+Null -> [String] -> AnyRef -> Any
+
+推导类型：String
+```
+
+让我们思考下 `Int` 和其他不能包含 null 的原始类型。为了研究这种情况，让我们进入 REPL 并使用 `:type` 命令（这条命令可以得到表达式的类型）：
+
+```scala-repl
+scala> :type if (false) 23 else null
+Any
+```
+
+这与上面例子中一个分支返回 String 对象的情况不同。
+让我们来看看这里的详细类型，相比 `Nothing` 继承 everything，`Null` 继承的类型会少一点。
+让我们再次使用 :type 看看 Int 的继承关系：
+
+```scala-repl
+scala> :type -v 12
+// 类型签名
+Int
+
+// 内部类型结构
+TypeRef(TypeSymbol(final abstract class Int extends AnyVal))
+```
+
+在这里，可见选项（-v）输出了更多的信息，现在我们知道 `Int` 是一个 `AnyVal` - 是一个代表值类的特殊类 - 不能接受 `Null`。
+如果我们查看 https://github.com/scala/scala/blob/v2.10.3/src/library/scala/AnyVal.scala[AnyVal 实现]，我们会发现:
+
+```scala
+abstract class AnyVal extends Any with NotNull
+```
+（注意，上面的代码是 Scala 2.10.x 及之前的 `AnyVal` 实现；从 2.11.x 之后，NotNull 就被移除了）
+
+我之所以在这里提到这个，是因为 AnyVal 的核心功能被很好的用类型表达出来。*注意 NotNull 特质*！
+
+回到刚才的主题，为什么我们的 if 语句，其中一个分支的类型是 `AnyVal` 然后另一个分支的类型是 `Null` 的公共类型是 Any 而不是其他类型。
+一句简洁的解释就是： `Null 继承所有 AnyRefs` 而 `Nothing 继承 anything`。
+因为 AnyVals（比如 numbers）与 AnyRefs 不在同一颗继承树上，那么一个 number 和一个 `null` 值的公共类型只能是 Any - 这就是上述情况的解释。
+
+```scala
+类型可视化：
+
+Int  -> NotNull -> AnyVal -> [Any]
+Null            -> AnyRef -> [Any]
+
+推导类型：Any
+```
+

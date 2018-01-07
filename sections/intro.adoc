@@ -1,0 +1,14 @@
+== The different types of... Types in Scala
+
+这篇博客是我在 2013 年参加了数个 JavaOne 会议，多次与人们讨论 Scala 中的类型之后写下的。经过这些讨论，我发现不同的人学习 Scala 时都会重复询问许多类似的问题。
+我认为这是因为我们没有一个完整记录 Scala 类型技巧的列表，所以我决定写这样的一个列表 - 用现实生活的例子解释为什么我们需要这些类型。
+
+== WORK IN PROGRESS
+
+虽然我在这篇博文已经花了不少时间，但是其中还有很多未完成。
+比如 Higher Kinds 部分需要重写，Self Type 部分添加更多的细节等等。请查看 https://github.com/ktoso/scala-types-of-types/blob/gh-pages/TODO[TODO]。
+
+如果你想帮忙的话，请不要犹豫！我欢迎任何形式的 pull request 或者建议（呃，我更喜欢 pull request;-)
+
+另外，如果你看到某个小节标记着 "+++<span style="color:red">&#x2717;</span>+++" ，这意味着这部分需要重写或者还没有完成。
+

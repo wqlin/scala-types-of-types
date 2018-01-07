@@ -1,0 +1,15 @@
+== Type of an `object`
+Scala 的 `object` 是基于类实现的（这是很显然的 - 因为类是 JVM 的基本构建模块），
+但是你会注意到我们无法像获得类的类型那样获得一个 object 的类型。
+
+令人惊讶的是，我经常被问到如何传递一个 object 给一个方法的问题。
+如果仅使用 `obj: ExampleObj` 是不能通过编译的，这是因为 ExampleObject 已经指向 object 实例了，在这种情况下应该使用一个叫做 `type` 的方法。
+下面的例子展示了如何使用 `type` 方法：
+
+```scala
+object ExampleObj
+
+def takeAnObject(obj: ExampleObj.type) = {}
+
+takeAnObject(ExampleObj)
+```

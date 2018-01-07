@@ -1,0 +1,46 @@
+=== Thanks and kudos
+
+我要特别感谢所有参与校对和审阅的人，你们帮助我打磨了这篇文章并且多次给了很有价值的反馈(按时间顺序:-)):
+
+* 感谢 Sergio Rodrigez，他的文章审阅是我这辈子见过最有深度和建议的
+* 感谢 Andrzej Grzesik，来自 http://java.pl[PolishJUG] / http://geecon.org[GeeCON]
+* 感谢 Joshua Sureth 在 devoxx 午饭后的精彩评论和例子
+* 感谢 http://softwaremill.com[SoftwareMill] 的审阅和评论
+* 感谢 http://virtuslab.com[VirtusLab] 提出的拼写纠正、makefile 和建议
+* 感谢 http://www.krakowscala.pl[Kraków Scala User Group] 的阅读校对和建议
+* 所有提交了 PR 改进拼写和其他小错误的人
+* _TODO, 还有更多的人_
+* 特别是你，感谢阅读
+
+
+非常欢迎 PR 和评论，这个是 https://github.com/ktoso/scala-types-of-types[原文的git仓库]，这个是 https://github.com/wqlin/scala-types-of-types[我本人翻译的 git 仓库]。
+
+我们的类型系统就介绍到这里了，如果你觉得有不完整或者需要改进的，可以给我或者给原作者发邮件。_生活就是在学习_ -- mailto:konrad.malawski@java.pl[Konrad 'ktoso' Malawski]
+
+我的邮箱 mailto:wqlin0@gmail.com[wqlin]
+
+=== Give back some kudos!
+如果你喜欢这篇博客，请使用下面的按钮通过 IRC 或者其他聊天服务、邮件、社交网络分享给你的朋友们！:-)
+
+++++
+<!-- Place this tag where you want the +1 button to render. -->
+<div class="g-plusone"></div>
+
+<!-- Place this tag after the last +1 button tag. -->
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/platform.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+++++
+
+++++
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="twitterapi" data-lang="en">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="https://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+++++
+
+++++
+<script type="text/javascript" src="http://www.reddit.com/static/button/button1.js"></script>
+++++

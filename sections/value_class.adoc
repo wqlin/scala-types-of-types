@@ -1,0 +1,113 @@
+== Value Class
+
+Value class 在 Scala 中已经存在很久了，而且你已经使用过很多次了，
+这是因为 Scala 中所有数值（numeric value）都使用这个编译器技巧避免类似 `scala.Int` 到 `java.lang.Integer` 的装箱和拆箱等。
+让我们回顾一下，Scala 的 `Array[Int]` 实际上是一个 JVM int[]（或者对于熟悉字节码的人来说，int[] 是一个称为 `[I]` 的 JVM 运行类型）
+我们知道，一个只包含数字的数组是非常快的，但是一个只包含引用的数组则相对较慢。
+
+好了，现在我们知道编译器有一些花哨的技巧避免将 `ints` 装箱到 `Integers` 不必要的转换。
+让我们看看从 Scala 2.10.x 开始该如何使用这样的功能。这样的功能被称为 "value classes"，可以很容易的用到你现有的类中。你只需要给你的类加上 `extends AnyVal`，并且遵循下面列出的一些规则。 
+如果你对 `AnyVal` 不熟悉，可以查看 <<unified-type-system-any-anyref-anyval, Unified Type System - Any, AnyRef, AnyVal>> 一节。
+
+在我们的例子中，让我们来实现一个 `Meter` 作为普通 `Double` 的包装类并且能够将米（公制，meters）的数量转换成英尺（英制，`Foot`）的数量。
+我们之所以需要这个类，因为没有人理解英制单位系统;-)。但缺陷是，如果有 95% 的时间我们都只是使用
+一个普通 meter 值，为什么我们还需要为 `scala.Double` 包装类付出额外的运行时代价（每个实例需要额外的字节！）- 因为这是个面向欧洲市场的项目？
+这时候我们需要 value class 来拯救！
+
+```scala
+case class Meter(value: Double) extends AnyVal {
+  def toFeet: Foot = Foot(value * 0.3048)
+}
+
+case class Foot(value: Double) extends AnyVal {
+  def toMeter: Meter = Meter(value / 0.3048)
+}
+```
+
+在这所有的例子中，我们会使用 Case(Value) Class，虽然从技术上来说这并不需要（但是非常方便）。
+你也可以使用一个带 `val` 参数的普通类实现 Value Class，但通常使用 case classes 是最好的方法。
+你可能会问为什么只需要一个参数 - 这是因为我们在尝试避免包装值（wrapping the value），而这样的方法只适用于单个值，否则我们需要在某个地方维护一个 Tuple，但这得不偿失，我们很快会弄糊涂并且失去不包装的性能。
+所以记住，value class 只适用于单个参数，但是参数不一定要是原始类型，也可以是普通的类，如 `Fruit` 或者 `Person`，我们还是可以在 Value Class 中避免包装这些值。
+
+
+TIP: 要定义一个 Value Class，你只需要定义一个*只有一个公有 val 参数*并且继承了 `AnyVal` 的类，并遵循它的一些限制。
+这个参数_不需要_是原始类型，可以是任意类型。另一方面，这些限制（局限）是一个长列表，例如一个 Value Class 不能包含除 `def` 成员以外的任何字段，并且类本身不能被继承等。
+有关 Value Class 完整限制和更深入的示例，请参考 Scala 文档 http://docs.scala-lang.org/overviews/core/value-classes.html#summary_of_limitations[Value Classes - summary of limitations]。
+
+好了，现在我们得到了 *Value Case Classes* `Meter` 和 `Foot`，让我们检查下当我们加上了 `extends AnyVal` 部分，
+将 Meter 从一个普通的 case class 变成一个 Value Class，生成的字节码是如何改变的。
+
+```java
+// case class
+scala> :javap Meter
+
+public class Meter extends java.lang.Object implements scala.Product,scala.Serializable{
+    public double value();
+    public Foot toFeet();
+    // ...
+}
+
+scala> :javap Meter$
+public class Meter$ extends scala.runtime.AbstractFunction1 implements scala.Serializable{
+    // ... (skipping not interesting in this use-case methods)
+}
+```
+
+以及为 value class 生成的字节码：
+
+```java
+// case value class
+
+scala> :javap Meter
+public final class Meter extends java.lang.Object implements scala.Product,scala.Serializable{
+    public double value();
+    public Foot toFeet();
+    // ...
+}
+
+scala> :javap Meter$
+public class Meter$ extends scala.runtime.AbstractFunction1 implements scala.Serializable{
+    public final Foot toFeet$extension(double);
+    // ...
+}
+```
+
+基本上这里只有一件事值得我们关注，编译器为 Value Class 生成的 Meter 伴生类有了一个新方法 - `toFeet$extension(double): Foot`。
+在此之前，这个方法只是 Meter 类的实例方法，不接受任何参数（所以它实际上是 `toFeet(): Foot`）。生成的方法被标记为 "extension"，
+这实际上正是我们给这种方法的名称（.NET 开发者可能知道这是在做什么）。
+
+
+我们使用 Value Classes 的目的是避免分配一个 value object，而是直接使用被包装的值，
+那么我们必须停止使用实例方法 - 因为这些实例方法会创建一个包装类（`Meter`）等。
+我们能做的是将这个实例方法提升为*扩展方法（extension method）*，正如我们存储在 `Meter` 伴生对象中那些方法，
+另外不直接使用实例的 `value: Double` 字段，而是每次调用*扩展方法*时传递一个 Double。
+
+
+TIP: *Extension methods* 和 *Implicit conversion* 有同样的功能（Implicit conversion 更强大和通用），
+但是某些方面比 conversions 要简单 - 它们避免了创建 "Wrapper" 对象，
+而 implicit conversions 需要创建 wrapper 对象才能提供 "added methods" 的功能。
+Extension methods 采取了重写生成方法的方式，所以它们接受需要被扩展的类型作为第一个参数。
+举个例子，当你调用 `3.toHexString`，这个方法是通过 implicit conversion 加入到 Int 中，
+但是 implicit conversion 的转换目标是 `class RichInt extends AnyVal`，
+所以 RichInt 是一个 Value Class。那么这次调用不会创建一个 `RichInt` 对象，而是会被重写为 `RichInt$.$MODULE$.toHexString$extension(3)`，这样就避免了创建 RichInt。
+
+让我们使用我们新学到的知识来调查在 `Meter` 例子中编译器实际上会为我们做什么。
+我们编写的代码时，会在源代码旁边注释解释编译器实际产生的字节码（即，当我们运行代码时会发生什么）
+
+[source,scala]
+----
+// 源代码                       // 产生的字节码实际做了什么
+
+val m: Meter  = Meter(12.0)    // 存储 12.0                                        <1>
+val d: Double = m.value * 2    // 存储浮点数相乘（12.0 * 2.0）                       <2>
+val f: Foot   = m.toFeet       // 调用 Meter$.$MODULE$.toFeet$extension(12.0)      <3>
+
+----
+<1> 可能有人会认为这里会创建一个 Meter 对象，但是因为我们在使用 Value Class，实际上只存储被包装的值 - 也就是说在*运行时*，我们实际上在使用 double（赋值和类型检查依然“验证”这好像是一个 Meter 实例）
+<2> 这里我们访问 Value Class 的 value（字段名字不重要）。注意到运行时虚拟机直接操作原始的 double，所以事实上并没有调用 `value` 方法，就好像我们在使用普通的 case class
+<3> 这里似乎我们将要调用定义在 `Meter` 上的实例方法，但实际上，编译器已经用一个扩展方法调用代替了这次调用，然后向扩展方法传递了 12.0。我们得到了一个 Foot 实例...等等，`Foot` 也是定义成 Value Class，所以运行时我们再次得到一个普通的 double。
+我们不必关心关心源代码 - 使用 Value Class 我们能获得性能上的好处，还不影响代码的语义
+
+这些就是 extension methods 和 value classes 的基础。如果你想了解更多关于 Value Class 的更多案例，请参考 http://docs.scala-lang.org/overviews/core/value-classes.html[official documentation's section about Value Classes]
+其中 *Mark Harrah* 使用很多例子很好的解释了 Value Classes，所以在这里除了基本介绍我不会重复他的努力:-)。
+

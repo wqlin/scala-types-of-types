@@ -1,0 +1,39 @@
+== Package Object
+
+http://www.scala-lang.org/docu/files/packageobjects/packageobjects.html[Package object] 在 Scala 2.8 中加入，尽管它没有很好的扩展类型系统，
+但是提供了一个非常有用的模式，允许我们"一次性导入一堆东西（importing a bunch of stuff together）"，同时还是编译器寻找隐式转换的地方。
+这里，我们的讨论将局限于它的第一个用法，即将数据聚合在一起：
+
+声明一个 package object 很简单，只需要使用关键字 `package` 和 `object`，例如：
+
+```scala
+// src/main/scala/com/garden/apples/package.scala
+
+package com.garden
+
+package object apples extends RedApples with GreenApples {
+  val redApples = List(red1, red2)
+  val greenApples = List(green1, green2)
+}
+
+trait RedApples {
+  val red1, red2 = "red"
+}
+
+trait GreenApples {
+  val green1, green2 = "green"
+}
+```
+通常人们会将 package object 放在一个名为 `package.scala` 的文件中，
+再将该文件又放在这些对象所属的包下，例如上面的源文件路径和 package。
+
+使用时，你会获得极大的好处，
+这是因为当你导入这个 "package" 时，
+你会导入定义在该 package 中的任何状态：
+
+```scala
+import com.garden.apples._
+
+redApples foreach println
+```
+

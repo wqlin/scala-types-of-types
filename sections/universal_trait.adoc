@@ -1,0 +1,6 @@
+== Universal Trait +++<span style="color:red">&#x2717;</span>+++
+
+Universal traits are 是那些继承了 `Any` 的特质，通常它们应该只含有 `def`，没有初始化代码
+
+WARNING: TODO 实现文档 :-)
+

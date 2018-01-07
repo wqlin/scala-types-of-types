@@ -1,0 +1,56 @@
+== Unified Type System - Any, AnyRef, AnyVal
+
+我们之所以称 Scala 的类型系统是"统一"的，是因为它有一个最顶层类型 Any。
+**这不同于 Java**，Java 存在原始类型的"特殊情况"（`int`, `long`, `float`, `double`, `byte`, `char`, `short`, `boolean`），这些类型不继承 Java 的"近似顶层类型" - `java.lang.Object`。
+
+image::assets/img/scala-types.png[Scala's Unified Type System, align="center"]
+
+Scala 通过引入 `Any` 使得所有类型都有一个通用顶层类型。`Any` 是 `AnyRef` 和 `AnyVal` 的父类。
+
+`AnyRef` 是 Java（以及 JVM）的"对象世界（object world）"，对应 `java.lang.Object`，是所有对象的父类。
+另一方面，`AnyVal` 对应 Java 的"值世界（value world）"，比如 `int` 和其它 JVM 原始类型。
+
+得益于这样的层次结构，我们可以定义接受 `Any` 的方法 - 兼容 `scala.Int` 和 `java.lang.String`：
+
+```scala
+class Person
+
+val allThings = ArrayBuffer[Any]()
+
+val myInt = 42             // Int, 运行时保持 JVM 原始类型 `int`
+
+allThings += myInt         // Int（继承 AnyVal）
+                           // 需要装箱（！） -> 在集合中变成 java.lang.Integer（！）
+
+allThings += new Person()  // Person（继承 AnyRef），没有特别的地方
+```
+
+类型系统能透明地处理值和对象的集成或者共同存在，但一旦我们在 JVM 级别进入 `ArrayBuffer[Any]`，我们的 Int 实例会被打包成对象。
+让我们使用 Scala REPL 和它的 `:javap` 命令（该命令可以展示编译器生成的字节码）来研究上面的例子：
+```
+35: invokevirtual #47  // Method myInt:()I
+38: invokestatic  #53  // Method scala/runtime/BoxesRunTime.boxToInteger:(I)Ljava/lang/Integer;
+41: invokevirtual #57  // Method scala/collection/mutable/ArrayBuffer.$plus$eq:(Ljava/lang/Object;)Lscala/collection/mutable/ArrayBuffer;
+```
+
+你能注意到 `myInt` 仍是一个 `int primitive` 类型的值（从 `myInt:() I` *invokevirtual* 调用后的 I 可以看出）。
+然后，在将其加入 ArrayBuffer 之前，scalac 插入了一个 `BoxesRunTime.boxToInteger:(I)Ljava/lang/Integer` 的调用（给没有经常阅读字节码读者的一个小提示，scalac 实际调用的是 `public Integer boxToInteger(i: int)`）。
+通过一个聪明的编译器，将所有变量都作为这个公共类型结构中的一个对象，这么做，至少在 Scala 源代码层面，我们可以远离"但是原始类型是不同的"窘况 - 编译器会帮我们处理这种情况。
+在 JVM 层面，当然区别还是存在的，scalac 会尽可能的使用原始类型，因为原始类型的操作更快，并且占用更少的内存（对象显然大于原始类型）。
+
+另一方面，我们可以限制一个方法只能接受"轻量级"值类型：
+
+```scala
+def check(in: AnyVal) = ()
+
+check(42)    // Int -> AnyVal
+check(13.37) // Double -> AnyVal
+
+check(new Object) // -> AnyRef = 编译失败
+
+```
+在上面的例子中，我们使用了一个 TypeClass `Checker[T]` 和一个类型绑定，这将在下面讨论。
+总体思路是，这个方法只接受 <<value-class, Value Classes>>，可以是 Int 或者自定义的 Value 类型。
+虽然这样的用法不常见，但是它很好地展示了类型系统是如何拥抱 Java 原始类型，并将它们引入到"真实"的类型系统，
+而不是像 Java 那样区分出引用类型和值类型。
+

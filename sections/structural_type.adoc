@@ -1,0 +1,68 @@
+== Structural Type
+
+如果你想有一个直观的理解，Structural Type 通常被描述为"**类型安全的鸭子类型（type-safe duck typing)**"，
+
+到现在为止，我们都是从“它是否实现了接口 X"的方式思考类型。有了 structural types，我们可以更进一步，开始推理一个给定对象的结构（这就是它名字的来源）。
+当使用 structure typing 检查一个类型时，我们需要问"这个类型是否有符合这个签名的方法"。
+
+让我们看看一个非常流行的例子，理解为什么 structural type 很强大。
+想象一下，你有许多可以被关闭（**closed**)的类。在 Java 的世界中，人们通常会实现 `java.io.Closeable` 接口，以便编写一个常用的 `Closeable` 工具类（事实上，*Google Guava* 便提供了这样的工具类）。
+现在想象有其他人实现了一个 `MyOwnCloseable` 类但是没有继承 `java.io.Closeable`。
+由于静态类型限制，你的 `Closeables` 库就不能使用这个类了，你不能将一个 MyOwnCloseable 实例传递给你的库。
+让我们使用 Structural Typing 来解决这个问题：
+
+
+```scala
+type JavaCloseable = java.io.Closeable
+// 注意，JavaCloseable 实际上是: { def close(): Unit }
+
+class MyOwnCloseable {
+  def close(): Unit = ()
+}
+
+
+// 接受一个 Structural Type 的方法
+def closeQuietly(closeable: { def close(): Unit }) =
+  try {
+    closeable.close()
+  } catch {
+    case ex: Exception => // 忽略...
+  }
+
+
+// 接受一个 java.io.File 实例(实现了 Closeable):
+closeQuietly(new StringReader("example"))
+
+// 接受一个 MyOwnCloseable 实例
+closeQuietly(new MyOwnCloseable)
+```
+
+structural type 被定义为 closeQuietly 的参数。这基本在说我们希望这个类型应该包含 close 方法。
+它还可以有其他方法 - 所以 structural types 不是一个精确的匹配，而是定义了一个合法类型至少要包含方法的最小集合。
+
+使用 *Structural Typing* 要牢记的另一个事实是它有非常巨大的（负面的）运行时性能影响，因为它是使用反射实现的。
+在这个例子中我们不会去查看对应的字节码，但是要记住，在 Scala REPL 中使用 :javap 可以非常容易地查看 scala（或者 java）类生成的字节码。
+所以你应该自己去尝试下。
+
+在我们讨论下一个话题前，让我简要介绍一个小巧但是整洁的技巧。
+想象一下，你的 Structural Type 非常大，一个例子是表示一个可以打开，使用，然后关闭的类型。
+通过在 Structural Type 中使用 Type Alias，我们可以将类型定义与方法定义分开，正如下面这种情况：
+
+
+```scala
+type OpenerCloser = {
+  def open(): Unit
+  def close(): Unit
+}
+
+def on(it: OpenerCloser)(fun: OpenerCloser => Unit) = {
+  it.open()
+  fun(it)
+  it.close()
+}
+```
+
+通过使用 type alias，我们使得 `def` 定义更加清晰了。
+我强烈建议对较大的 Structural Type 使用 Type Alias。
+最后提醒，考虑到 structural type 的负面性能影响，你总是要检查你是否真的需要 structural typing，而不能使用其他方式实现。
+

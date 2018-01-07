@@ -1,0 +1,34 @@
+== Type Projection
+
+Type Projections 允许你引用一个内部类的类型，从这方面看，它类似于 Path Dependent Types。
+从语法来看，你可以使用 # 符号分离出内部类的路径。首先，让我们看看 Type Projections 的例子以及它们（"#" 语法）与 path dependent types（"." 语法）的区别：
+
+```scala
+// 我们的示例类结构
+class Outer {
+  class Inner
+}
+
+// 使用 Type Projection (和 alias) 引用 Inner
+type OuterInnerProjection = Outer#Inner
+
+val out1 = new Outer
+val out1in = new out1.Inner
+```
+
+关于 path dependent 和 projections 另一个很直观的印象是 Type Projections 可以用于 "type-level programming";-)
+
+
+回到 Path Dependent Type 的例子，如果想要表达 "child of any parent"，可以这么写：
+
+```scala
+class Parent {
+  class Child
+}
+
+class ChildrenContainer {
+  type ChildOfAnyParent = Parent#Child
+
+  def add(c: ChildOfAnyParent) = ???
+}
+```

@@ -1,0 +1,34 @@
+== Bibliography and Kudos
+
+=== Reference and further reading
+
+当然这篇文章要求相当多的研究和仔细检查，这里是所有我发现有用的链接（你可能也会）：
+
+[bibliography]
+- [[[scala-spec]]] The http://www.scala-lang.org/docu/files/ScalaReference.pdf[Scala Language Specification]
+- [[[enumeration-docs]]] http://www.scala-lang.org/api/current/index.html#scala.Enumeration
+- [[[enum-sip]]] https://docs.google.com/document/d/1mIKml4sJzezL_-iDJMmcAKmavHb9axjYJos_7UMlWJ8/edit
+- [[[twitter-scala-school]]] Twitter 的 Scala School: http://twitter.github.io/scala_school 包含了许多 Scala 概念，帮助我很好的解释了 Variance（是我发现过最好的解释）。
+- [[[universal-types]]] 非常老，但还是 Universal Types 的有效解释: http://www.scala-lang.org/old/node/128
+- [[[maciver-existentials]]] D.R. MacIver 的 Existential Types: http://www.drmaciver.com/2008/03/existential-types-in-scala/
+- [[[scala-doc]]] Scala API 文档: http://www.scala-lang.org/api/current/index.html
+- [[[dragos-specialized]]] Dragos 的演讲，非常好的介绍了 Scala 2.8 的 `@specialized`： http://days2010.scala-lang.org/node/138/151/15-7-E%20-%20Specialization%20-%20Dragos.pdf[Scala Days 2010 - Specialization]
+- [[[wiki-diamond]]] http://en.wikipedia.org/wiki/Diamond_problem#The_diamond_problem[Wikipedia 上的菱形问题]
+- [[[generics-specialization]]] **Martin Odersky**' 和 **Iulian Dragos**' 关于 specialization 的白皮书 http://infoscience.epfl.ch/record/150134[Compiling generics through user-directed type specialization]
+- [[[dangers-of-subtype-polymorphism]]] http://blog.jooq.org/2013/06/28/the-dangers-of-correlating-subtype-polymorphism-with-generic-polymorphism/[The dangers of correlating subtype polymorphism with generic polymorphism]
+- [[[safar-linearization]]] Safari 上关于 Type Linearization 的在线书籍: http://blog.safaribooksonline.com/2013/05/30/traits-how-scala-tames-multiple-inheritance/
+- [[[phantom-types-haskell]]] *James Iry* 和他的 http://james-iry.blogspot.co.uk/2010/10/phantom-types-in-haskell-and-scala.html[Phantom Types in Haskell and Scala] 博客
+- [[[typesafe-builder]]] Scala 社区中有关 Phantom Types 的最早一篇博客（我认为），作者是 *Rafael Ferreira* http://blog.rafaelferreira.net/2008/07/type-safe-builder-pattern-in-scala.html[Type Safe Builder Pattern in Scala]
+- [[[kriss-type-lambda]]] StackOverflow 上关于 Type Lambdas 很棒的答案，作者是 **Kriss Nuttycombe**： http://stackoverflow.com/questions/8736164/what-are-type-lambdas-in-scala-and-what-are-their-benefits
+- [[[rogue-phantom-types]]] *Jason Liszka* 在 Foursquare 的博客中介绍了他们的 Rogue 库使用 Phantom Types http://engineering.foursquare.com/2011/01/31/going-rogue-part-2-phantom-types/[Going Rogue part 2 - phantom types]
+- [[[kind-pull-req]]] **Adriaan Moors** 向 `scala` 提交的 :kind pull request https://github.com/scala/scala/pull/2340
+- [[[patronus-type]]] Eugene Yakota 的 http://eed3si9n.com/constraining-class-linearization-in-Scala[constraining class linearization in scala]，在这篇博客中他介绍他发现的 "patronus type" 模式
+- [[[the-flying-sandwich-part]]] Eugene Yakota 的 Scala 模式和开发建议 http://eed3si9n.com/node/139[Scala: The flying sandwich parts]
+- [[[package-object]]] Martin Odersky, Lex Spoon - http://www.scala-lang.org/docu/files/packageobjects/packageobjects.html[Package Objects] 网站（2010）
+- [[[union-types-miles]]] **Miles Sabin** 解释了 Union Types http://www.chuusai.com/2011/06/09/scala-union-types-curry-howard/[Miles Sabin on Union Types]
+- [[[vampire-type]]] http://meta.plasm.us/posts/2013/07/12/vampire-methods-for-structural-types/[Vampire Methods for Structural Types]
+
+演讲
+[bibliography]
+- [[[types-of-types-lambda-days]]] **Konrad Malawski**（作者本人）在 http://lambdadays.org[Lambda Days Krakรณw 2014] 对本文做了一个快速介绍和总览。这里有 https://vimeo.com/87986458[视频] 和 http://www.slideshare.net/ktoso/scala-types-of-types-lambda-days[幻灯片]
+
